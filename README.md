@@ -18,7 +18,10 @@ pokemon-api/
 │   ├── Http/Controllers/Api/
 │   │   ├── PokemonController.php
 │   │   ├── TypeController.php
-│   │   └── AbilityController.php
+│   │   ├── AbilityController.php
+│   │   └── MetricsController.php
+│   ├── Console/Commands/
+│   │   └── PopulatePokemonData.php
 │   └── Models/
 │       ├── Pokemon.php
 │       ├── Type.php
@@ -90,6 +93,44 @@ A API estará disponível em: `http://localhost:8000`
 - `name` - Filtrar por nome
 - `is_hidden` - Filtrar por tipo de habilidade (true/false)
 
+### Metrics
+
+- `GET /api/metrics` - Análise de métricas dos pokémons
+- `GET /api/metrics/available` - Lista métricas e atributos disponíveis
+
+**Parâmetros para `/api/metrics` (todos opcionais):**
+- `metric` - Métrica para analisar (padrão: `total_stats`)
+- `limit` - Limite de itens (padrão: `10`)
+- `order` - Ordenação: `desc` (melhores) ou `asc` (piores) (padrão: `desc`)
+- `attribute` - Atributo específico para mostrar (padrão: `name`)
+
+**Métricas disponíveis:**
+- `hp` - Hit Points (HP)
+- `attack` - Attack Power
+- `defense` - Defense Power
+- `special_attack` - Special Attack Power
+- `special_defense` - Special Defense Power
+- `speed` - Speed
+- `total_stats` - Total Stats (soma de todos os stats)
+- `height` - Height
+- `weight` - Weight
+- `order` - Pokemon Order (Pokedex number)
+- `base_experience` - Base Experience
+
+**Atributos disponíveis:**
+- `name` - Pokemon Name
+- `pokemon_id` - Pokemon ID from PokeAPI
+- `height` - Height
+- `weight` - Weight
+- `base_experience` - Base Experience
+- `hp` - Hit Points
+- `attack` - Attack Power
+- `defense` - Defense Power
+- `special_attack` - Special Attack Power
+- `special_defense` - Special Defense Power
+- `speed` - Speed
+- `total_stats` - Total Stats
+
 ## Exemplos de Uso
 
 ### Buscar todos os pokémons
@@ -117,21 +158,88 @@ curl http://localhost:8000/api/types
 curl http://localhost:8000/api/types/1/pokemon
 ```
 
+### Exemplos de Métricas
+
+#### Top 5 Pokemon com maior total de stats
+```bash
+curl "http://localhost:8000/api/metrics?metric=total_stats&limit=5&order=desc"
+```
+
+#### Top 3 Pokemon com maior ataque
+```bash
+curl "http://localhost:8000/api/metrics?metric=attack&limit=3&order=desc"
+```
+
+#### Top 3 Pokemon com menor velocidade
+```bash
+curl "http://localhost:8000/api/metrics?metric=speed&limit=3&order=asc"
+```
+
+#### Top 5 Pokemon mais pesados, mostrando também a altura
+```bash
+curl "http://localhost:8000/api/metrics?metric=weight&limit=5&order=desc&attribute=height"
+```
+
+#### Top 10 Pokemon com maior HP
+```bash
+curl "http://localhost:8000/api/metrics?metric=hp&limit=10&order=desc"
+```
+
+#### Ver métricas disponíveis
+```bash
+curl "http://localhost:8000/api/metrics/available"
+```
+
 ## Banco de Dados
 
 O banco de dados possui as seguintes tabelas:
 
-- **pokemon** - Dados principais dos pokémons
+- **pokemon** - Dados principais dos pokémons (inclui stats: hp, attack, defense, special_attack, special_defense, speed, total_stats)
 - **types** - Tipos de pokémons
 - **abilities** - Habilidades dos pokémons
 - **pokemon_types** - Relacionamento muitos-para-muitos entre pokémons e tipos
 - **pokemon_abilities** - Relacionamento muitos-para-muitos entre pokémons e habilidades
 
-## Seeder
+## Comando para Popular Dados
 
-O `PokemonSeeder` busca automaticamente os primeiros 50 pokémons da PokéAPI e popula o banco de dados com suas informações, incluindo tipos e habilidades.
+### Comando Artisan Personalizado
 
-Para executar apenas o seeder:
+Foi criado um comando Artisan personalizado `pokemon:populate` que consome a PokéAPI e popula o banco de dados de forma eficiente e controlada.
+
+#### Uso Básico
+```bash
+# Popular 50 pokémons (padrão)
+docker-compose exec app php artisan pokemon:populate
+
+# Popular 100 pokémons
+docker-compose exec app php artisan pokemon:populate --limit=100
+
+# Popular a partir do pokémon 50
+docker-compose exec app php artisan pokemon:populate --offset=50 --limit=50
+
+# Limpar dados existentes antes de popular
+docker-compose exec app php artisan pokemon:populate --clear
+
+# Combinar opções
+docker-compose exec app php artisan pokemon:populate --limit=150 --offset=0 --clear
+```
+
+#### Opções Disponíveis
+- `--limit` - Número de pokémons para buscar (padrão: 50)
+- `--offset` - Posição inicial para paginação (padrão: 0)
+- `--clear` - Limpar dados existentes antes de popular
+
+#### Funcionalidades do Comando
+- ✅ Barra de progresso em tempo real
+- ✅ Tratamento de erros (continua mesmo se alguns pokémons falharem)
+- ✅ Transações de banco (garante consistência dos dados)
+- ✅ Estatísticas detalhadas no final
+- ✅ Busca stats completos da PokéAPI (HP, Attack, Defense, etc.)
+
+### Seeder Tradicional
+
+O `PokemonSeeder` também está disponível para uso tradicional:
+
 ```bash
 docker-compose exec app php artisan db:seed --class=PokemonSeeder
 ```
