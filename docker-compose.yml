@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pokemon-api-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - pokemon-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: pokemon-api-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - pokemon-network
+
+  db:
+    image: mysql:8.0
+    container_name: pokemon-api-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: pokemon_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: password
+      MYSQL_USER: pokemon_user
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - pokemon-network
+    command: --default-authentication-plugin=mysql_native_password --ssl=0
+
+networks:
+  pokemon-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
