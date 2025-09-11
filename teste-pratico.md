@@ -340,6 +340,4 @@ Para desenvolvimento local, você pode usar o Laravel Sail (já incluído no pro
 - `Quais são as metricas disponíveis?` - Responde com as metricas disponíveis no fluxo.
 - `Top 3 pokemons mais altos` - Atributo indisponível no momento, o chat deve retornar quais são os atributos possíveis.
 
-
-**chave de API do OpenAI**
-api_key_openai="[CHAVE_REMOVIDA_POR_SEGURANCA]"
+**Chave API OpenAI:** Você deve gerar uma em: https://platform.openai.com/settings/organization/api-keys ou solicitar uma chave de API para uso.
