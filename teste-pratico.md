@@ -328,10 +328,18 @@ Para desenvolvimento local, você pode usar o Laravel Sail (já incluído no pro
 ./vendor/bin/sail artisan db:seed
 ```
 
-## Contribuição
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+##Fluxo n8n 
+
+- O Fluxo está disponível para importação no arquivo `chat_pokemon.json`
+
+**Possíveis perguntas:**
+- `Quais são os 5 pokemons com maior ataque?` - Lista os 5 pokemons com maior ataque de acordo com o retorno da API.
+- `Me traga o pokemon mais leve.` - Traz o pokemon mais leve de acordo com o retorno da API.
+- `Liste os top 3 em velocidade, mas só me retorne o nome.` - Lista os 3 top em velocidade, trazendo somente o nome.
+- `Quais são as metricas disponíveis?` - Responde com as metricas disponíveis no fluxo.
+- `Top 3 pokemons mais altos` - Atributo indisponível no momento, o chat deve retornar quais são os atributos possíveis.
+
+
+**chave de API do OpenAI**
+api_key_openai="[CHAVE_REMOVIDA_POR_SEGURANCA]"

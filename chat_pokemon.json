@@ -1,0 +1,315 @@
+{
+  "name": "Chat Pokemon",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "Você é um agente que interpreta a intenção do usuário.  Se a mensagem do usuário for sobre métricas de Pokémon (hp, attack, defense, speed, weight) você deve RESPONDER APENAS COM UM JSON válido NO SEGUINTE FORMATO (sem texto adicional):  {   \"metric\": \"attack\",      // uma das: hp, attack, defense, speed, weight   \"limit\": 5,              // inteiro (opcional, default 5)   \"order\": \"desc\",         // \"asc\" ou \"desc\" (opcional, default \"desc\")   \"attribute\": \"name\"      // atributo desejado no retorno, ex: \"name\" ou outro }  Se a mensagem NÃO for sobre métricas da API, responda em texto natural (uma resposta de chat normal, amigável). Se o usuário pedir uma métrica inválida, retorne uma mensagem de erro curta (texto), por exemplo: \"Esse atributo não está disponível. Escolha entre hp, attack, defense, speed, weight.\""
+            },
+            {
+              "content": "={{ $json.chatInput }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "d4d344c6-23de-467b-8751-30fff6100faa",
+      "name": "Interpretar Intenção (LLM)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "a2the5HTIq0tdl7S",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Detectar JSON ou texto vindo do node OpenAI.\n// Este código tenta extrair o texto do assistant a partir de diferentes formatos\n// e então tenta fazer JSON.parse. Se for JSON válido com \"metric\" => rota API.\n// Senão => fallback (resposta direta de chat).\n\nconst raw = items[0].json;\n\n// tenta encontrar o conteúdo do assistant em vários locais comuns\nlet assistantText = \"\";\n\nif (raw?.choices && Array.isArray(raw.choices) && raw.choices[0]?.message?.content) {\n  assistantText = raw.choices[0].message.content;\n} else if (raw?.message?.content) {\n  assistantText = raw.message.content;\n} else if (raw?.response) {\n  assistantText = raw.response;\n} else if (raw?.content) {\n  assistantText = raw.content;\n} else if (typeof raw === 'string') {\n  assistantText = raw;\n} else {\n  assistantText = JSON.stringify(raw);\n}\n\nassistantText = assistantText.trim();\n\ntry {\n  const parsed = JSON.parse(assistantText);\n\n  // se o JSON inclui o campo metric, consideramos intenção de API\n  if (parsed && parsed.metric) {\n    // garantir defaults\n    parsed.limit = parsed.limit ? parseInt(parsed.limit, 10) : 5;\n    parsed.order = parsed.order ? String(parsed.order).toLowerCase() : 'desc';\n    parsed.attribute = parsed.attribute ? String(parsed.attribute) : 'name';\n\n    return [{ json: { ...parsed, fallback: false } }];\n  } else {\n    // JSON, mas sem 'metric' -> trata como resposta de chat normal\n    return [{ json: { fallback: true, reply: assistantText } }];\n  }\n} catch (e) {\n  // não é JSON -> fallback: resposta de chat\n  return [{ json: { fallback: true, reply: assistantText } }];\n}\n"
+      },
+      "id": "3203a686-1bae-4347-a182-b2e25352cdb5",
+      "name": "Detectar JSON ou Texto",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const validMetrics = [\"hp\", \"attack\", \"defense\", \"speed\", \"weight\"];\nconst { metric, limit, order, attribute } = items[0].json;\n\nif (!validMetrics.includes(metric)) {\n  return [{ json: { error: true, reply: \"Esse atributo não está disponível. Escolha entre hp, attack, defense, speed, weight.\" } }];\n}\n\nreturn [{ json: { metric, limit, order, attribute } }];"
+      },
+      "id": "248bc237-f768-49cd-92ee-f1f5da914fc8",
+      "name": "Validar Métrica",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        304,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://138.197.211.210:8000/api/metrics?metric",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "metric",
+              "value": "={{$json.metric}}"
+            },
+            {
+              "name": "limit",
+              "value": "={{$json.limit}}"
+            },
+            {
+              "name": "order",
+              "value": "={{$json.order}}"
+            },
+            {
+              "name": "attribute",
+              "value": "={{$json.attribute}}"
+            }
+          ]
+        }
+      },
+      "id": "25295954-cff5-4e6b-830a-7b0d87dd2543",
+      "name": "Consultar API Pokémon",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        560,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cbf3fd88-de10-4f03-9651-faf40cd28886",
+              "leftValue": "={{ $json.fallback }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        240
+      ],
+      "id": "ba0a53e6-6b08-40b4-96af-9e861ddbb3ac",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "=Você é um assistente de IA que interpreta dados de APIs e fornece respostas úteis aos usuários. Use os dados da API para responder à pergunta do usuário de forma clara e útil."
+            },
+            {
+              "content": "=Pergunta do usuário: {{ $('Recebe mensagem').item.json.chatInput }}\\n\\nDados da API:\\n{{ JSON.stringify($json, null, 2) }}\\n\\nCom base nos dados da API, forneça uma resposta clara e útil para o usuário."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 1000,
+          "temperature": 0.7
+        },
+        "requestOptions": {}
+      },
+      "id": "7180c80b-d729-4271-ad1d-3bb90dffa71c",
+      "name": "Formatar resposta API",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        864,
+        128
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "a2the5HTIq0tdl7S",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        240
+      ],
+      "id": "3d24f605-566f-453d-876a-567e21b0c2ce",
+      "name": "Recebe mensagem",
+      "webhookId": "ebfe949f-be4b-4ab1-a4f7-e6fd8231bb70",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.reply }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        304,
+        384
+      ],
+      "id": "869a5588-a164-4fd9-b5ec-c4e30ffb8947",
+      "name": "Resposta sem API"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.message.content }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        128
+      ],
+      "id": "534e4a1b-0fb0-41ed-a46c-94e2a56518b5",
+      "name": "Resposta com API"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Interpretar Intenção (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Detectar JSON ou Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Métrica": {
+      "main": [
+        [
+          {
+            "node": "Consultar API Pokémon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar API Pokémon": {
+      "main": [
+        [
+          {
+            "node": "Formatar resposta API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar JSON ou Texto": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Resposta sem API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar Métrica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar resposta API": {
+      "main": [
+        [
+          {
+            "node": "Resposta com API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recebe mensagem": {
+      "main": [
+        [
+          {
+            "node": "Interpretar Intenção (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a71e36a6-1e51-45e1-98ae-271a9707e73b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4045c2568a7f3764fd487724e8605e51080f5a22d7d167d24956d470771a71ae"
+  },
+  "id": "3cZXd4QKBH4CF18k",
+  "tags": []
+}
