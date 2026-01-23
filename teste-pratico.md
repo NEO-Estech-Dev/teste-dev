@@ -1,55 +1,118 @@
-#  Teste para candidatos à vaga de Desenvolvedor PHP/N8N Automação Estech
+# 🧪 Teste Técnico – Desenvolvedor PHP / N8N (Estech)
 
-Olá caro desenvolvedor, nesse teste analisaremos seu conhecimento geral e inclusive velocidade de desenvolvimento. Abaixo explicaremos tudo o que será necessário.
+Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico** e também sua **velocidade de desenvolvimento**.  
+Leia atentamente as instruções antes de iniciar.
 
-##  Instruções
+---
 
-O desafio consiste em implementar uma aplicação API Rest utilizando o framework PHP Laravel, um banco de dados relacional (Mysql), que terá como finalidade a ingestão de dados e metrificação de uma base de pokemons.
-Use a API pública https://pokeapi.co/ para ingestão de dados.
+## 🎯 Objetivo do Desafio
 
-Sua aplicação deve possuir:
+Implementar uma **API REST** utilizando **Laravel (PHP)** e **MySQL**, cujo objetivo é realizar a **ingestão de dados** da API pública de Pokémons e disponibilizar **métricas consultáveis** a partir desses dados.
 
-- Um Command de ingest de dados:
-	- Que consuma uma API e popule o banco de dados MYSQL.  	
+A API pública a ser utilizada é:  
+👉 https://pokeapi.co/
 
-- Uma rota onde eu consiga ver métricas.
-	- Devo poder escolher a métrica que quero analisar: Ex: hp|attack|defense|special_attack|special_defense|speed|total|height|weight|order
-	- Devo poder informar o limite de itens
-	- Devo poder trazer apenas uma atributo especifico no top (como nome por exemplo)
-  	- Devo poder ordenar por melhores ou piores
-  	- Obs: Todos os parametros devem ser opcionais.
-   
-##  Banco de dados
+---
 
-- O banco de dados deve ser criado utilizando Migrations do framework Laravel.
+## 📋 Requisitos Funcionais
 
-##  Tecnologias a serem utilizadas
+### 1️⃣ Ingestão de Dados
 
-Devem ser utilizadas as seguintes tecnologias:
-	- PHP
-	- Framework Laravel
-	- Docker (construção do ambiente de desenvolvimento)
-	- Mysql
+Sua aplicação deve possuir um **Command do Laravel** responsável por:
 
-##  Entrega
+- Consumir a API pública do PokeAPI;
+- Persistir os dados relevantes no banco de dados MySQL;
+- Permitir reexecução do comando sem corromper os dados (idempotência é um diferencial).
 
-- Para iniciar o teste, faça um fork deste repositório; **Se você apenas clonar o repositório não vai conseguir fazer push.**
+---
 
-- Crie uma branch com o seu nome completo;
-- Altere o arquivo teste-pratico.md com as informações necessárias para executar o seu teste (comandos, migrations, seeds, etc);
+### 2️⃣ Endpoint de Métricas
 
-- Depois de finalizado, envie-nos o pull request;
+Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
 
-##  Bônus
+A rota deve permitir, **de forma opcional**, os seguintes parâmetros:
 
-- Implementar autenticação de usuário na aplicação usando sanctum.
+- **Métrica a ser analisada**, por exemplo:
+  - `hp`
+  - `attack`
+  - `defense`
+  - `special_attack`
+  - `special_defense`
+  - `speed`
+  - `total`
+  - `height`
+  - `weight`
+  - `order`
 
-##  O que será analisado?
+- **Limite de resultados**
+  - Exemplo: top 5, top 10, etc.
 
-- Criação e automação do ambiente com Docker;
-- Transformação de dados;
-- Organização do código;
-- Raciocínio lógico;
-- Performance e otimização de consultas;
+- **Campo específico a ser retornado**
+  - Exemplo: retornar apenas o `name` no ranking.
 
-###  Boa sorte!
+- **Ordenação**
+  - Maiores valores (melhores)
+  - Menores valores (piores)
+
+📌 **Observação:**  
+Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
+
+---
+
+## 🗄️ Banco de Dados
+
+- O banco de dados deve ser modelado e criado **exclusivamente via Migrations do Laravel**;
+- Fique à vontade para definir a melhor modelagem, desde que faça sentido para o domínio do problema.
+
+---
+
+## 🧰 Tecnologias Obrigatórias
+
+O projeto **deve** utilizar:
+
+- PHP
+- Framework **Laravel**
+- **MySQL**
+- **Docker** (para construção do ambiente de desenvolvimento)
+
+---
+
+## 🚀 Entrega do Desafio
+
+Para entregar o teste, siga rigorosamente os passos abaixo:
+
+1. Faça um **fork** deste repositório  
+   > ⚠️ Apenas clonar o repositório não permitirá o push.
+
+2. Crie uma **branch com seu nome completo**;
+
+3. Atualize o arquivo `teste-pratico.md`, descrevendo claramente:
+   - Como subir o ambiente (Docker);
+   - Comandos necessários (migrations, seeds, ingestão de dados, etc);
+   - Qualquer observação relevante para execução do projeto.
+
+4. Após finalizar, abra um **Pull Request** para o repositório original.
+
+---
+
+## ⭐ Bônus (Opcional)
+
+- Implementar autenticação de usuários utilizando **Laravel Sanctum**.
+
+---
+
+## 🔍 O que será avaliado?
+
+- Configuração e automação do ambiente com Docker;
+- Modelagem e transformação de dados;
+- Organização e legibilidade do código;
+- Clareza no raciocínio lógico;
+- Performance e otimização das consultas;
+- Boas práticas com Laravel e PHP.
+
+---
+
+## 🍀 Boa sorte!
+
+Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
+
