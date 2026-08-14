@@ -1,4 +1,4 @@
-# 🧪 Teste Técnico – Desenvolvedor PHP / N8N (Estech)
+# 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
 
 Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico** e também sua **velocidade de desenvolvimento**.  
 Leia atentamente as instruções antes de iniciar.
