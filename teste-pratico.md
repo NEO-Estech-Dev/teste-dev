@@ -22,7 +22,6 @@ Sua aplicação deve possuir um **Command do Laravel** responsável por:
 
 - Consumir a API pública do PokeAPI;
 - Persistir os dados relevantes no banco de dados MySQL;
-- Permitir reexecução do comando sem corromper os dados (idempotência é um diferencial).
 
 ---
 
@@ -30,22 +29,10 @@ Sua aplicação deve possuir um **Command do Laravel** responsável por:
 
 Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
 
-A rota deve permitir, **de forma opcional**, os seguintes parâmetros:
+A rota deve permitir, **de forma opcional**, os parâmetros:
 
 - **Métrica a ser analisada**, por exemplo:
   - `hp`
-  - `attack`
-  - `defense`
-  - `special_attack`
-  - `special_defense`
-  - `speed`
-  - `total`
-  - `height`
-  - `weight`
-  - `order`
-
-- **Limite de resultados**
-  - Exemplo: top 5, top 10, etc.
 
 - **Campo específico a ser retornado**
   - Exemplo: retornar apenas o `name` no ranking.
@@ -56,6 +43,7 @@ A rota deve permitir, **de forma opcional**, os seguintes parâmetros:
 
 📌 **Observação:**  
 Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
+Você pode definir outros parâmetros que garantam performance, melhor visibilidade, etc.
 
 ---
 
@@ -98,6 +86,8 @@ Para entregar o teste, siga rigorosamente os passos abaixo:
 ## ⭐ Bônus (Opcional)
 
 - Implementar autenticação de usuários utilizando **Laravel Sanctum**.
+- Usar Octane / Swoole
+- Criar testes automatizados
 
 ---
 
