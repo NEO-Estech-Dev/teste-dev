@@ -2,6 +2,7 @@
 
 namespace App\Services\Pokemon;
 
+use App\Exceptions\PokeApiException;
 use App\Models\Pokemon;
 use App\Models\Type;
 use App\Services\PokeApi\PokeApiClient;
@@ -18,8 +19,13 @@ class PokemonIngestionService
     /**
      * @return array{imported: int, failed: int, limit: int, offset: int, errors: list<array{name: string, error: string}>}
      */
-    public function ingest(int $limit, int $offset = 0, bool $fresh = false, ?callable $onProgress = null): array
-    {
+    public function ingest(
+        int $limit,
+        int $offset = 0,
+        bool $fresh = false,
+        int $concurrency = 10,
+        ?callable $onProgress = null
+    ): array {
         if ($fresh) {
             $this->resetCatalog();
         }
@@ -28,28 +34,41 @@ class PokemonIngestionService
         $results = $listing['results'] ?? [];
         $imported = 0;
         $errors = [];
+        $concurrency = max(1, min($concurrency, 25));
 
-        foreach ($results as $item) {
-            $name = (string) ($item['name'] ?? 'unknown');
+        foreach (array_chunk($results, $concurrency) as $chunk) {
+            $names = array_values(array_map(
+                fn (array $item): string => (string) ($item['name'] ?? 'unknown'),
+                $chunk
+            ));
 
-            try {
-                $payload = $this->client->getPokemon($name);
-                $this->persist($payload);
-                $imported++;
-            } catch (Throwable $exception) {
-                $errors[] = [
-                    'name' => $name,
-                    'error' => $exception->getMessage(),
-                ];
+            $payloads = $this->client->getPokemons($names);
 
-                Log::warning('Falha ao importar Pokémon.', [
-                    'name' => $name,
-                    'message' => $exception->getMessage(),
-                ]);
-            }
+            foreach ($names as $name) {
+                try {
+                    $payload = $payloads[$name] ?? new PokeApiException("Falha ao obter o Pokémon [{$name}] na PokeAPI.");
 
-            if ($onProgress) {
-                $onProgress($name);
+                    if ($payload instanceof Throwable) {
+                        throw $payload;
+                    }
+
+                    $this->persist($payload);
+                    $imported++;
+                } catch (Throwable $exception) {
+                    $errors[] = [
+                        'name' => $name,
+                        'error' => $exception->getMessage(),
+                    ];
+
+                    Log::warning('Falha ao importar Pokémon.', [
+                        'name' => $name,
+                        'message' => $exception->getMessage(),
+                    ]);
+                }
+
+                if ($onProgress) {
+                    $onProgress($name);
+                }
             }
         }
 

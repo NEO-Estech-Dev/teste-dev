@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Pokemon;
+use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -68,8 +68,30 @@ class IngestPokemonsCommandTest extends TestCase
         $this->assertDatabaseHas('pokemons', ['name' => 'bulbasaur']);
     }
 
+    public function test_ingests_multiple_pokemons_in_parallel(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            '*/pokemon?*' => Http::response([
+                'results' => [
+                    ['name' => 'bulbasaur', 'url' => 'https://pokeapi.co/api/v2/pokemon/1/'],
+                    ['name' => 'ivysaur', 'url' => 'https://pokeapi.co/api/v2/pokemon/2/'],
+                ],
+            ]),
+            '*/pokemon/bulbasaur' => $this->fakePokemon('bulbasaur', 1, 45),
+            '*/pokemon/ivysaur' => $this->fakePokemon('ivysaur', 2, 60),
+        ]);
+
+        $this->artisan('pokemons:ingest', ['--limit' => 2, '--concurrency' => 2])
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('pokemons', ['name' => 'bulbasaur', 'hp' => 45]);
+        $this->assertDatabaseHas('pokemons', ['name' => 'ivysaur', 'hp' => 60]);
+        $this->assertSame(2, Pokemon::query()->count());
+    }
+
     /**
-     * @return array<string, Response>
+     * @return array<string, PromiseInterface>
      */
     private function fakeCatalog(): array
     {
@@ -79,25 +101,30 @@ class IngestPokemonsCommandTest extends TestCase
                     ['name' => 'bulbasaur', 'url' => 'https://pokeapi.co/api/v2/pokemon/1/'],
                 ],
             ]),
-            '*/pokemon/bulbasaur' => Http::response([
-                'id' => 1,
-                'name' => 'bulbasaur',
-                'height' => 7,
-                'weight' => 69,
-                'sprites' => ['front_default' => 'https://example.test/bulbasaur.png'],
-                'stats' => [
-                    ['base_stat' => 45, 'stat' => ['name' => 'hp']],
-                    ['base_stat' => 49, 'stat' => ['name' => 'attack']],
-                    ['base_stat' => 49, 'stat' => ['name' => 'defense']],
-                    ['base_stat' => 65, 'stat' => ['name' => 'special-attack']],
-                    ['base_stat' => 65, 'stat' => ['name' => 'special-defense']],
-                    ['base_stat' => 45, 'stat' => ['name' => 'speed']],
-                ],
-                'types' => [
-                    ['slot' => 1, 'type' => ['name' => 'grass', 'url' => 'https://pokeapi.co/api/v2/type/12/']],
-                    ['slot' => 2, 'type' => ['name' => 'poison', 'url' => 'https://pokeapi.co/api/v2/type/4/']],
-                ],
-            ]),
+            '*/pokemon/bulbasaur' => $this->fakePokemon('bulbasaur', 1, 45),
         ];
+    }
+
+    private function fakePokemon(string $name, int $id, int $hp): PromiseInterface
+    {
+        return Http::response([
+            'id' => $id,
+            'name' => $name,
+            'height' => 7,
+            'weight' => 69,
+            'sprites' => ['front_default' => "https://example.test/{$name}.png"],
+            'stats' => [
+                ['base_stat' => $hp, 'stat' => ['name' => 'hp']],
+                ['base_stat' => 49, 'stat' => ['name' => 'attack']],
+                ['base_stat' => 49, 'stat' => ['name' => 'defense']],
+                ['base_stat' => 65, 'stat' => ['name' => 'special-attack']],
+                ['base_stat' => 65, 'stat' => ['name' => 'special-defense']],
+                ['base_stat' => 45, 'stat' => ['name' => 'speed']],
+            ],
+            'types' => [
+                ['slot' => 1, 'type' => ['name' => 'grass', 'url' => 'https://pokeapi.co/api/v2/type/12/']],
+                ['slot' => 2, 'type' => ['name' => 'poison', 'url' => 'https://pokeapi.co/api/v2/type/4/']],
+            ],
+        ]);
     }
 }

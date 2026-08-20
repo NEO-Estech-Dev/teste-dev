@@ -10,6 +10,7 @@ class IngestPokemonsCommand extends Command
     protected $signature = 'pokemons:ingest
         {--limit= : Quantidade de Pokémon a importar}
         {--offset=0 : Offset na listagem da PokeAPI}
+        {--concurrency= : Requisições HTTP paralelas na busca de detalhes}
         {--fresh : Remove os dados existentes antes de importar}';
 
     protected $description = 'Consome a PokeAPI e persiste Pokémon e tipos no MySQL';
@@ -18,9 +19,10 @@ class IngestPokemonsCommand extends Command
     {
         $limit = (int) ($this->option('limit') ?: config('pokeapi.default_limit'));
         $offset = (int) $this->option('offset');
+        $concurrency = (int) ($this->option('concurrency') ?: config('pokeapi.concurrency'));
         $fresh = (bool) $this->option('fresh');
 
-        $this->info("Iniciando ingestão de {$limit} Pokémon (offset {$offset})...");
+        $this->info("Iniciando ingestão de {$limit} Pokémon (offset {$offset}, concorrência {$concurrency})...");
 
         $bar = $this->output->createProgressBar($limit);
         $bar->start();
@@ -29,6 +31,7 @@ class IngestPokemonsCommand extends Command
             limit: $limit,
             offset: $offset,
             fresh: $fresh,
+            concurrency: $concurrency,
             onProgress: function () use ($bar) {
                 $bar->advance();
             }

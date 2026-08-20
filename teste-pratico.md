@@ -155,11 +155,11 @@ Opções:
 
 ```bash
 docker compose exec app php artisan pokemons:ingest --limit=20
-docker compose exec app php artisan pokemons:ingest --limit=151 --fresh
+docker compose exec app php artisan pokemons:ingest --limit=151 --concurrency=10 --fresh
 docker compose exec app php artisan app:setup --ingest
 ```
 
-A ingestão é idempotente (upsert). Se um Pokémon falhar, os demais continuam.
+A ingestão busca os detalhes em paralelo (`Http::pool`), com `--concurrency` limitado entre 1 e 25 (padrão 10). É idempotente (upsert). Se um Pokémon falhar, os demais continuam.
 
 ### Endpoint de métricas
 
@@ -218,4 +218,12 @@ Há também um workflow de CI em `.github/workflows/tests.yml`.
 - CORS está habilitado para `http://localhost:5173` e `http://localhost:3000` (ajustável em `CORS_ALLOWED_ORIGINS`).
 - Respostas seguem `{ data, meta }` / `{ message, errors }`.
 - A documentação em `/docs/api` permite testar os endpoints sem front-end.
+
+### Decisões técnicas
+
+- **Stats em colunas indexadas**, não EAV: o ranking do desafio é `ORDER BY hp DESC` (e equivalentes). Colunas com índice resolvem isso direto no MySQL, sem pivot nem JSON.
+- **Tipos em N:N** (`types` + `pokemon_type` com `slot`): um Pokémon tem mais de um tipo; a relação fica normalizada sem inflar a tabela principal.
+- **Métricas públicas**: o PDF pede um GET com params opcionais. Sanctum entra no bônus (register/login/logout/me), sem travar a consulta do ranking.
+- **Ingestão paralela, sem fila**: o command já resolve o requisito. `Http::pool` acelera o I/O da PokeAPI; persistência continua item a item, com falha isolada.
+- **Sem Octane/Redis nesta entrega**: a API é leitura simples + um command. Octane faria sentido sob carga real, não para o escopo do teste.
 

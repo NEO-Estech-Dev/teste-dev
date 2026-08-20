@@ -5,8 +5,11 @@ namespace App\Services\PokeApi;
 use App\Exceptions\PokeApiException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class PokeApiClient
 {
@@ -32,24 +35,69 @@ class PokeApiClient
 
     public function getPokemon(string $nameOrId): array
     {
-        $response = $this->request()->get("/pokemon/{$nameOrId}");
+        $result = $this->getPokemons([$nameOrId])[$nameOrId] ?? null;
 
-        if ($response->failed()) {
+        if ($result instanceof Throwable) {
+            throw $result;
+        }
+
+        if (! is_array($result)) {
             throw new PokeApiException("Falha ao obter o Pokémon [{$nameOrId}] na PokeAPI.");
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  list<string>  $names
+     * @return array<string, array|Throwable>
+     */
+    public function getPokemons(array $names): array
+    {
+        if ($names === []) {
+            return [];
+        }
+
+        $responses = Http::pool(function (Pool $pool) use ($names) {
+            foreach ($names as $name) {
+                $this->request($pool->as($name))->get("/pokemon/{$name}");
+            }
+        });
+
+        $payloads = [];
+
+        foreach ($names as $name) {
+            $payloads[$name] = $this->decodePokemonResponse($name, $responses[$name] ?? null);
+        }
+
+        return $payloads;
+    }
+
+    private function decodePokemonResponse(string $name, mixed $response): array|Throwable
+    {
+        if ($response instanceof Throwable) {
+            return $response;
+        }
+
+        if (! $response instanceof Response || $response->failed()) {
+            return new PokeApiException("Falha ao obter o Pokémon [{$name}] na PokeAPI.");
         }
 
         $payload = $response->json();
 
         if (! is_array($payload) || ! isset($payload['id'], $payload['name'])) {
-            throw new PokeApiException("Resposta inválida ao obter o Pokémon [{$nameOrId}].");
+            return new PokeApiException("Resposta inválida ao obter o Pokémon [{$name}].");
         }
 
         return $payload;
     }
 
-    private function request(): PendingRequest
+    private function request(?PendingRequest $pending = null): PendingRequest
     {
-        return Http::baseUrl(rtrim((string) config('pokeapi.base_url'), '/'))
+        $request = $pending ?? Http::acceptJson();
+
+        return $request
+            ->baseUrl(rtrim((string) config('pokeapi.base_url'), '/'))
             ->acceptJson()
             ->timeout((int) config('pokeapi.timeout'))
             ->retry(3, 250, function ($exception) {
