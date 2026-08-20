@@ -14,7 +14,19 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
-
+    queue:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: pokemon-queue
+        restart: unless-stopped
+        command: php artisan queue:work
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            mysql:
+                condition: service_healthy
+                
     mysql:
         image: mysql:8.4
         container_name: pokemon-mysql
