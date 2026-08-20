@@ -23,4 +23,22 @@ class Pokemon extends Model
     {
         return $this->hasMany(PokemonStat::class);
     }
+
+    public static function getMetricRanking(String $metric, String $sort, Int $limit)
+    {
+        return self::query()
+                ->select([
+                    'pokemons.name',
+                ])
+                ->join(
+                    'pokemons_stats',
+                    'pokemons.id',
+                    '=',
+                    'pokemons_stats.pokemon_id'
+                )
+                ->where('pokemons_stats.stat_name', $metric)
+                ->orderBy('pokemons_stats.base_stat', $sort)
+                ->limit($limit)
+                ->get();
+    }
 }
