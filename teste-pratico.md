@@ -106,3 +106,116 @@ Para entregar o teste, siga rigorosamente os passos abaixo:
 
 Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
 
+---
+
+## Como executar o projeto
+
+Arquitetura desacoplada: a aplicação foi desenvolvida como uma **API REST** independente de camada de apresentação. Clientes web ou mobile podem ser desenvolvidos depois sem alterar o domínio.
+
+### Pré-requisitos
+
+- Docker
+- Docker Compose
+
+### Subir o ambiente
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+No Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
+```
+
+Na subida, o container `app` instala dependências se necessário, gera a `APP_KEY` se estiver vazia, roda **migrations** e o **seeder**.
+
+A API fica em `http://localhost:8000`.  
+Documentação interativa (OpenAPI): `http://localhost:8000/docs/api`.  
+O MySQL do Docker usa a porta **3307** no host (a 3306 costuma estar ocupada por um MySQL local). Dentro da rede Docker a aplicação continua em `mysql:3306`.
+
+Se precisar rerodar o setup manualmente:
+
+```bash
+docker compose exec app php artisan app:setup
+```
+
+### Ingestão de dados
+
+Importa a 1ª geração (151 Pokémon) por padrão:
+
+```bash
+docker compose exec app php artisan pokemons:ingest
+```
+
+Opções:
+
+```bash
+docker compose exec app php artisan pokemons:ingest --limit=20
+docker compose exec app php artisan pokemons:ingest --limit=151 --fresh
+docker compose exec app php artisan app:setup --ingest
+```
+
+A ingestão é idempotente (upsert). Se um Pokémon falhar, os demais continuam.
+
+### Endpoint de métricas
+
+`GET /api/pokemons/metrics` — rota **pública**.
+
+Parâmetros opcionais:
+
+| Parâmetro | Default | Descrição |
+|---|---|---|
+| `metric` | `hp` | `hp`, `attack`, `defense`, `special_attack`, `special_defense`, `speed` |
+| `order` | `desc` | `desc` (melhores) ou `asc` (piores) |
+| `fields` | `name,value` | Campos retornados. Ex.: `name` |
+| `per_page` | `20` | Itens por página (máx. 100) |
+| `page` | `1` | Página |
+
+Exemplos:
+
+```bash
+curl "http://localhost:8000/api/pokemons/metrics"
+curl "http://localhost:8000/api/pokemons/metrics?metric=attack&order=desc&per_page=10"
+curl "http://localhost:8000/api/pokemons/metrics?metric=hp&fields=name&order=asc"
+```
+
+### Autenticação (Sanctum)
+
+Usuário de demonstração criado pelo seeder:
+
+- e-mail: `avaliador@estech.test`
+- senha: `password`
+
+```bash
+curl -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"avaliador@estech.test\",\"password\":\"password\"}"
+```
+
+Rotas autenticadas (`Authorization: Bearer {token}`):
+
+- `GET /api/user`
+- `POST /api/logout`
+
+Cadastro: `POST /api/register` com `name`, `email`, `password` e `password_confirmation`.
+
+### Testes
+
+```bash
+docker compose exec app php artisan test
+```
+
+Há também um workflow de CI em `.github/workflows/tests.yml`.
+
+### Observações
+
+- O banco é criado só por **migrations**.
+- Stats ficam em colunas indexadas para ranking rápido (`ORDER BY hp DESC`).
+- CORS está habilitado para `http://localhost:5173` e `http://localhost:3000` (ajustável em `CORS_ALLOWED_ORIGINS`).
+- Respostas seguem `{ data, meta }` / `{ message, errors }`.
+- A documentação em `/docs/api` permite testar os endpoints sem front-end.
+
