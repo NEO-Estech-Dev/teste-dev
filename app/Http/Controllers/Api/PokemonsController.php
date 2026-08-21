@@ -19,6 +19,14 @@ class PokemonsController extends Controller
 
         $data = Pokemon::getMetricRanking($metric, $sort, $limit);
 
+        if ($data->isEmpty()) {
+            return response()->json([
+                'status' => 'Sucesso',
+                'message' => 'Nenhum Pokémon encontrado.',
+                'data' => [],
+            ]);
+        }
+
         return response()->json([
             'status' => 'Sucesso',
             'message' => 'API de métricas dos Pokémons',
