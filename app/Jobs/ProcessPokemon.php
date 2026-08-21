@@ -85,9 +85,10 @@ class ProcessPokemon implements ShouldQueue
             }
 
             $pokemon->update([
-                'height' => $dataStats['height'] ?? null,
-                'weight' => $dataStats['weight'] ?? null,
-                'stats_processed_at' => now(),
+                'height'                => $dataStats['height'] ?? null,
+                'weight'                => $dataStats['weight'] ?? null,
+                'base_experience'       => $dataStats['base_experience'] ?? null,
+                'stats_processed_at'    => now(),
             ]);
 
             // return true;

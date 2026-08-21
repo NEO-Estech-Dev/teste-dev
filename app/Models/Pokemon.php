@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Table('pokemons')]
-#[Fillable(['name', 'external_id', 'external_url', 'processed_at'])]
+#[Fillable(['external_id', 'external_url', 'name','height', 'weight', 'base_experience', 'stats_processed_at',])]
 class Pokemon extends Model
 {
     protected function casts(): array
