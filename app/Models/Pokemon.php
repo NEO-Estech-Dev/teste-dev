@@ -36,6 +36,7 @@ class Pokemon extends Model
                     '=',
                     'pokemons_stats.pokemon_id'
                 )
+                ->whereNotNull('pokemons.stats_processed_at')
                 ->where('pokemons_stats.stat_name', $metric)
                 ->orderBy('pokemons_stats.base_stat', $sort)
                 ->limit($limit)
