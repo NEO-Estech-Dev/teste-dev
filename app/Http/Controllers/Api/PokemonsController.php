@@ -15,7 +15,7 @@ class PokemonsController extends Controller
 
         $metric = Str::lower($validated['metric'] ?? 'hp');
         $sort = Str::lower($validated['sort'] ?? 'desc');
-        $limit = (int) $validated['limit'] ?? 20;
+        $limit = $validated['limit'] ?? 20;
 
         $data = Pokemon::getMetricRanking($metric, $sort, $limit);
 
