@@ -1,0 +1,50 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile
+        container_name: pokemon-api
+        restart: unless-stopped
+        ports:
+            - "8000:8000"
+        volumes:
+            - .:/var/www/html
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        depends_on:
+            mysql:
+                condition: service_healthy
+    queue:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile
+        container_name: pokemon-queue
+        restart: unless-stopped
+        command: php artisan queue:work
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            mysql:
+                condition: service_healthy
+                
+    mysql:
+        image: mysql:8.4
+        container_name: pokemon-mysql
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: pokemon
+            MYSQL_USER: pokemon
+            MYSQL_PASSWORD: pokemon
+            MYSQL_ROOT_PASSWORD: root
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql_data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+volumes:
+    mysql_data:
