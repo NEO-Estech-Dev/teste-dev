@@ -17,7 +17,7 @@ services:
     queue:
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: docker/Dockerfile
         container_name: pokemon-queue
         restart: unless-stopped
         command: php artisan queue:work
