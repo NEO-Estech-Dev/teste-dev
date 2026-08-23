@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+#[Table('pokemons')]
+#[Fillable('id','pokemon_id','name','height','weight','order','specie','base_experience')]
+#[Hidden('created_at', 'updated_at')]
+class Pokemon extends Model
+{
+    public function game_indices()
+    {
+        return $this->hasMany(GameIndice::class, 'pokemon_id', 'pokemon_id');
+    }
+
+    public function stats(): HasMany
+    {
+        return $this->hasMany(Stat::class, 'pokemon_id', 'pokemon_id');
+    }
+}

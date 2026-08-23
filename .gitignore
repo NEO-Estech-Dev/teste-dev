@@ -1,0 +1,43 @@
+# =====================
+# Geral
+# =====================
+node_modules/
+*.log
+*.env
+*.env.*.local
+.DS_Store
+Thumbs.db
+
+# =====================
+# Laravel - Api/servico
+# =====================
+api/servico/vendor/
+api/servico/node_modules/
+api/servico/storage/*.key
+api/servico/storage/app/public/*
+!api/servico/storage/app/public/.gitignore
+api/servico/storage/debugbar/*
+api/servico/storage/framework/cache/*
+api/servico/storage/framework/sessions/*
+api/servico/storage/framework/testing/*
+api/servico/storage/framework/views/*
+api/servico/storage/logs/*
+api/servico/public/storage
+api/servico/.env
+api/servico/.env.*.local
+api/servico/homestead.yaml
+api/servico/Homestead.json
+api/servico/phpunit.result.cache
+
+# =====================
+# Docker
+# =====================
+.docker/
+*.tar
+
+# =====================
+# VSCode
+# =====================
+.vscode/
+.code-workspace
+.scannerwork
