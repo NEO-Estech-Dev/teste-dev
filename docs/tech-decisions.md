@@ -63,10 +63,17 @@ Por padrão, o comando busca todos os Pokémon da PokeAPI. Para desenvolvimento 
 - `--offset`
 - `--chunk`
 - `--fresh`
+- `--async`
 
-A ingestão é síncrona porque o volume da PokeAPI é administrável para este teste e porque fica mais simples para o avaliador executar e acompanhar. Em um cenário maior, faria sentido adicionar uma opção assíncrona com filas, workers e retries por job.
+O modo síncrono continua sendo o padrão porque é simples de executar no teste. O modo assíncrono entra como opção para cenários em que a ingestão não deve prender o terminal.
+
+No modo assíncrono, o comando cria um batch de jobs na fila `pokeapi-ingestion`. Cada job processa um chunk de Pokémon. Escolhi chunk em vez de um job por Pokémon para não criar jobs demais, e em vez de um job único para permitir retry parcial quando algo falhar.
+
+Usei Redis e Horizon porque o Horizon trabalha sobre filas Redis e entrega painel, métricas e histórico de falhas. O Redis fica só como infraestrutura de fila; a regra de persistência continua no serviço de ingestão.
 
 Cada Pokémon é salvo dentro de uma transação própria. Se o processo falhar no meio, os registros já processados continuam consistentes. Como a ingestão é idempotente, o comando pode ser executado novamente sem duplicar dados.
+
+O job usa retry, backoff, rate limit e lock de execução. Isso reduz falhas por instabilidade da PokeAPI e evita duas ingestões concorrentes mexendo no mesmo conjunto de tabelas ao mesmo tempo.
 
 ## Persistência
 Os detalhes da modelagem estão em [`database-design.md`](database-design.md).

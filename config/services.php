@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'pokeapi' => [
+        'rate_limit_per_minute' => env('POKEAPI_RATE_LIMIT_PER_MINUTE', 120),
+    ],
+
 ];

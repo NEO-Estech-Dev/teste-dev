@@ -2,6 +2,10 @@
 
 API REST em Laravel para ingerir dados da PokeAPI, salvar em MySQL e consultar rankings de Pokémon por métricas.
 
+## Collection Postman (validação da API)
+
+Tem um collection pronta para importar para o postman em [collection](./docs/poke-api.postman_collection.json)
+
 ## Ambiente
 
 Requisitos:
@@ -56,13 +60,37 @@ Ingestão rápida para validação:
 ./vendor/bin/sail artisan pokeapi:ingest --fresh --limit=20
 ```
 
+Para usar a ingestão assíncrona, deixe o Horizon rodando em outro terminal:
+
+```bash
+./vendor/bin/sail artisan horizon
+```
+
+Depois despache a ingestão:
+
+```bash
+./vendor/bin/sail artisan pokeapi:ingest --async --fresh --limit=100 --chunk=50
+```
+
+Painel do Horizon:
+
+```text
+http://localhost:8000/horizon
+```
+
+Se os jobs aparecerem em `Pending Jobs` e não saírem dali, confirme se o worker está ativo:
+
+```bash
+./vendor/bin/sail artisan horizon:status
+```
+
 Opções úteis:
 
 ```bash
 ./vendor/bin/sail artisan pokeapi:ingest --limit=100 --offset=0 --chunk=50
 ```
 
-A ingestão é síncrona, paginada e idempotente. Se falhar no meio, os Pokémon já processados permanecem consistentes e o comando pode ser executado novamente sem duplicar registros.
+A ingestão padrão é síncrona, paginada e idempotente. Com `--async`, o comando cria jobs na fila Redis `pokeapi-ingestion` e retorna um `batch_id`. Se falhar no meio, os Pokémon já processados permanecem consistentes e o comando pode ser executado novamente sem duplicar registros.
 
 ## Autenticação
 
@@ -131,6 +159,7 @@ php artisan test
 ## Observações
 
 - O container da aplicação executa Laravel Octane com Swoole.
+- A ingestão assíncrona usa Redis e pode ser acompanhada pelo Horizon em `/horizon` no ambiente local.
 - As rotas de métricas exigem autenticação via Laravel Sanctum.
 - Os comandos de banco devem ser executados via Sail, pois o `.env` usa `DB_HOST=mysql`.
 - Decisões técnicas: [`docs/tech-decisions.md`](docs/tech-decisions.md).

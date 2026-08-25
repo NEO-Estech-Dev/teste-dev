@@ -2,9 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\IngestPokemonChunkJob;
+use App\Services\PokeApiIngestionService;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Mockery;
 use Tests\TestCase;
 
 class PokeApiIngestCommandTest extends TestCase
@@ -92,6 +99,80 @@ class PokeApiIngestCommandTest extends TestCase
         $this->assertDatabaseCount('pokemon_stats', 4);
         $this->assertDatabaseCount('pokemon_type', 2);
         $this->assertDatabaseCount('pokemon_ability', 2);
+    }
+
+    public function test_command_dispatches_async_batch_with_expected_chunks(): void
+    {
+        Bus::fake();
+        Cache::lock('pokeapi-ingestion')->forceRelease();
+
+        $this->artisan('pokeapi:ingest --async --limit=120 --offset=10 --chunk=50')
+            ->assertSuccessful();
+
+        Bus::assertBatchCount(1);
+        Bus::assertBatched(function (PendingBatch $batch): bool {
+            /** @var Collection<int, IngestPokemonChunkJob> $jobs */
+            $jobs = $batch->jobs;
+
+            return $batch->name === 'Ingestão PokeAPI'
+                && $batch->connection() === 'redis'
+                && $batch->queue() === 'pokeapi-ingestion'
+                && $jobs->count() === 3
+                && $jobs[0]->offset === 10
+                && $jobs[0]->limit === 50
+                && $jobs[1]->offset === 60
+                && $jobs[1]->limit === 50
+                && $jobs[2]->offset === 110
+                && $jobs[2]->limit === 20;
+        });
+
+        Cache::lock('pokeapi-ingestion')->forceRelease();
+    }
+
+    public function test_async_command_uses_pokeapi_count_when_limit_is_not_provided(): void
+    {
+        Bus::fake();
+        Cache::lock('pokeapi-ingestion')->forceRelease();
+
+        Http::fake([
+            'https://pokeapi.co/api/v2/pokemon*' => Http::response([
+                'count' => 125,
+                'results' => [],
+            ]),
+        ]);
+
+        $this->artisan('pokeapi:ingest --async --offset=25 --chunk=50')
+            ->assertSuccessful();
+
+        Bus::assertBatchCount(1);
+        Bus::assertBatched(function (PendingBatch $batch): bool {
+            /** @var Collection<int, IngestPokemonChunkJob> $jobs */
+            $jobs = $batch->jobs;
+
+            return $jobs->count() === 2
+                && $jobs[0]->offset === 25
+                && $jobs[0]->limit === 50
+                && $jobs[1]->offset === 75
+                && $jobs[1]->limit === 50;
+        });
+
+        Cache::lock('pokeapi-ingestion')->forceRelease();
+    }
+
+    public function test_ingest_pokemon_chunk_job_delegates_processing_to_service(): void
+    {
+        $service = Mockery::mock(PokeApiIngestionService::class);
+        $service
+            ->shouldReceive('ingestChunk')
+            ->once()
+            ->with(30, 25)
+            ->andReturn([
+                'processed' => 25,
+                'pages' => 1,
+                'failed' => 0,
+            ]);
+
+        (new IngestPokemonChunkJob(offset: 30, limit: 25))->handle($service);
     }
 
     /**

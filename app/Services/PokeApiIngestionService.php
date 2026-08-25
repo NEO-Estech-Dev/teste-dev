@@ -82,6 +82,33 @@ class PokeApiIngestionService
     }
 
     /**
+     * @return array{processed:int, pages:int, failed:int}
+     */
+    public function ingestChunk(int $offset, int $limit): array
+    {
+        return $this->ingest(
+            limit: $limit,
+            offset: $offset,
+            chunk: $limit,
+        );
+    }
+
+    public function pokemonCount(): int
+    {
+        $page = $this->get('pokemon', [
+            'limit' => 1,
+            'offset' => 0,
+        ]);
+
+        return (int) $page['count'];
+    }
+
+    public function clearDomainData(): void
+    {
+        $this->clearDomainTables();
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     private function persistPokemon(array $payload): Pokemon
