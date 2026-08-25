@@ -42,11 +42,6 @@ Execute as migrations:
 ```bash
 ./vendor/bin/sail artisan migrate
 ```
-
-Não há seed obrigatório. Os dados dos Pokémon são carregados pelo comando de ingestão.
-
-O banco configurado no `.env.example` é `poke-api`. Se esse nome for alterado depois que o volume do MySQL já existir, recrie o ambiente com `./vendor/bin/sail down -v` e suba novamente com `./vendor/bin/sail up -d`, ou crie o banco manualmente no MySQL.
-
 ## Ingestão de Dados
 
 Ingerir todos os Pokémon disponíveis na PokeAPI:
