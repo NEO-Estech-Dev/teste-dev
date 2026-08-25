@@ -1,108 +1,142 @@
-# 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
+# Teste Técnico: API de Métricas Pokémon
 
-Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico** e também sua **velocidade de desenvolvimento**.  
-Leia atentamente as instruções antes de iniciar.
+API REST em Laravel para ingerir dados da PokeAPI, salvar em MySQL e consultar rankings de Pokémon por métricas.
 
----
+## Ambiente
 
-## 🎯 Objetivo do Desafio
+Requisitos:
 
-Implementar uma **API REST** utilizando **Laravel (PHP)** e **MySQL**, cujo objetivo é realizar a **ingestão de dados** da API pública de Pokémons e disponibilizar **métricas consultáveis** a partir desses dados.
+- Docker e Docker Compose.
+- PHP e Composer apenas para instalar as dependências iniciais do Laravel Sail.
 
-A API pública a ser utilizada é:  
-👉 https://pokeapi.co/
+Instale as dependências:
 
----
+```bash
+composer install
+```
 
-## 📋 Requisitos Funcionais
+Crie o `.env` e gere a chave da aplicação:
 
-### 1️⃣ Ingestão de Dados
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-Sua aplicação deve possuir um **Command do Laravel** responsável por:
+Suba o ambiente Docker:
 
-- Consumir a API pública do PokeAPI;
-- Persistir os dados relevantes no banco de dados MySQL;
+```bash
+./vendor/bin/sail up -d
+```
 
----
+A API ficará disponível em:
 
-### 2️⃣ Endpoint de Métricas
+```text
+http://localhost:8000
+```
 
-Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
+## Banco de Dados
 
-A rota deve permitir, **de forma opcional**, os parâmetros:
+(Aguarde até o container MySQL ficar disponível)
+Execute as migrations:
 
-- **Métrica a ser analisada**, por exemplo:
-  - `hp`
+```bash
+./vendor/bin/sail artisan migrate
+```
 
-- **Campo específico a ser retornado**
-  - Exemplo: retornar apenas o `name` no ranking.
+Não há seed obrigatório. Os dados dos Pokémon são carregados pelo comando de ingestão.
 
-- **Ordenação**
-  - Maiores valores (melhores)
-  - Menores valores (piores)
+O banco configurado no `.env.example` é `poke-api`. Se esse nome for alterado depois que o volume do MySQL já existir, recrie o ambiente com `./vendor/bin/sail down -v` e suba novamente com `./vendor/bin/sail up -d`, ou crie o banco manualmente no MySQL.
 
-📌 **Observação:**  
-Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
-Você pode definir outros parâmetros que garantam performance, melhor visibilidade, etc.
+## Ingestão de Dados
 
----
+Ingerir todos os Pokémon disponíveis na PokeAPI:
 
-## 🗄️ Banco de Dados
+```bash
+./vendor/bin/sail artisan pokeapi:ingest
+```
 
-- O banco de dados deve ser modelado e criado **exclusivamente via Migrations do Laravel**;
-- Fique à vontade para definir a melhor modelagem, desde que faça sentido para o domínio do problema.
+Ingestão rápida para validação:
 
----
+```bash
+./vendor/bin/sail artisan pokeapi:ingest --fresh --limit=20
+```
 
-## 🧰 Tecnologias Obrigatórias
+Opções úteis:
 
-O projeto **deve** utilizar:
+```bash
+./vendor/bin/sail artisan pokeapi:ingest --limit=100 --offset=0 --chunk=50
+```
 
-- PHP
-- Framework **Laravel**
-- **MySQL**
-- **Docker** (para construção do ambiente de desenvolvimento)
+A ingestão é síncrona, paginada e idempotente. Se falhar no meio, os Pokémon já processados permanecem consistentes e o comando pode ser executado novamente sem duplicar registros.
 
----
+## Autenticação
 
-## 🚀 Entrega do Desafio
+Registrar usuário:
 
-Para entregar o teste, siga rigorosamente os passos abaixo:
+```bash
+curl -sS -X POST http://localhost:8000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ash","email":"ash@example.com","password":"password123"}'
+```
 
-1. Faça um **fork** deste repositório  
-   > ⚠️ Apenas clonar o repositório não permitirá o push.
+Login:
 
-2. Crie uma **branch com seu nome completo**;
+```bash
+curl -sS -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ash@example.com","password":"password123"}'
+```
 
-3. Atualize o arquivo `teste-pratico.md`, descrevendo claramente:
-   - Como subir o ambiente (Docker);
-   - Comandos necessários (migrations, seeds, ingestão de dados, etc);
-   - Qualquer observação relevante para execução do projeto.
+Use o `token` retornado como Bearer Token.
 
-4. Após finalizar, abra um **Pull Request** para o repositório original.
+Logout:
 
----
+```bash
+curl -sS -X POST http://localhost:8000/api/logout \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
 
-## ⭐ Bônus (Opcional)
+## Métricas
 
-- Implementar autenticação de usuários utilizando **Laravel Sanctum**.
-- Usar Octane / Swoole
-- Criar testes automatizados
+Endpoint protegido:
 
----
+```http
+GET /api/metrics/pokemon
+```
 
-## 🔍 O que será avaliado?
+Exemplo:
 
-- Configuração e automação do ambiente com Docker;
-- Modelagem e transformação de dados;
-- Organização e legibilidade do código;
-- Clareza no raciocínio lógico;
-- Performance e otimização das consultas;
-- Boas práticas com Laravel e PHP.
+```bash
+curl -sS "http://localhost:8000/api/metrics/pokemon?metric=hp&field=name&order=desc&limit=10" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
 
----
+Parâmetros:
 
-## 🍀 Boa sorte!
+| Parâmetro | Padrão | Valores |
+| --- | --- | --- |
+| `metric` | `hp` | `hp`, `attack`, `defense`, `special-attack`, `special-defense`, `speed` |
+| `field` | `name` | `id`, `pokemon_id`, `name`, `base_experience`, `height`, `weight`, `metric_value` |
+| `order` | `desc` | `asc`, `desc` |
+| `limit` | `10` | inteiro entre `1` e `100` |
+| `page` | `1` | paginação padrão |
 
-Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
+## Testes
 
+```bash
+./vendor/bin/sail artisan test
+```
+
+Também é possível rodar localmente:
+
+```bash
+php artisan test
+```
+
+## Observações
+
+- O container da aplicação executa Laravel Octane com Swoole.
+- As rotas de métricas exigem autenticação via Laravel Sanctum.
+- Os comandos de banco devem ser executados via Sail, pois o `.env` usa `DB_HOST=mysql`.
+- Decisões técnicas: [`docs/tech-decisions.md`](docs/tech-decisions.md).
+- Modelagem do banco: [`docs/database-design.md`](docs/database-design.md).
