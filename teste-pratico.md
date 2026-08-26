@@ -1,6 +1,6 @@
 # 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
 
-Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico** e também sua **velocidade de desenvolvimento**.  
+Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico**, **perfomance**, **escalabilidade** e também sua **velocidade de desenvolvimento**.  
 Leia atentamente as instruções antes de iniciar.
 
 ---
@@ -62,6 +62,8 @@ O projeto **deve** utilizar:
 - Framework **Laravel**
 - **MySQL**
 - **Docker** (para construção do ambiente de desenvolvimento)
+
+- Caso sinta necessidade de outras tecnologias complementares, fique a vontade para utilizar.
 
 ---
 
