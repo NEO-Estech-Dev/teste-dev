@@ -35,18 +35,18 @@ pokemons N ─── N abilities
 
 Representa dados da espécie do Pokémon vindos do recurso `pokemon-species` da PokeAPI.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokeapi_id` | unsigned integer | unique, not null |
-| `name` | string | index, not null |
-| `base_happiness` | unsigned smallint | nullable |
-| `capture_rate` | unsigned smallint | nullable |
-| `is_baby` | boolean | default false |
-| `is_legendary` | boolean | default false |
-| `is_mythical` | boolean | default false |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno da espécie no banco. |
+| `pokeapi_id` | unsigned integer | unique, not null | Identificador da espécie na PokeAPI. |
+| `name` | string | index, not null | Nome da espécie. |
+| `base_happiness` | unsigned smallint | nullable | Felicidade base informada pela PokeAPI. |
+| `capture_rate` | unsigned smallint | nullable | Taxa base de captura da espécie. |
+| `is_baby` | boolean | default false | Indica se a espécie é classificada como bebê. |
+| `is_legendary` | boolean | default false | Indica se a espécie é lendária. |
+| `is_mythical` | boolean | default false | Indica se a espécie é mítica. |
+| `created_at` | timestamp | nullable | Data de criação local do registro. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do registro. |
 
 Relacionamentos:
 
@@ -56,17 +56,17 @@ Relacionamentos:
 
 Representa o Pokémon consultado pelo ranking de métricas.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokeapi_id` | unsigned integer | unique, not null |
-| `species_id` | bigint unsigned | nullable, foreign key para `species.id` |
-| `name` | string | index, not null |
-| `height` | unsigned smallint | not null |
-| `weight` | unsigned smallint | not null |
-| `base_experience` | unsigned integer | nullable |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno do Pokémon no banco. |
+| `pokeapi_id` | unsigned integer | unique, not null | Identificador do Pokémon na PokeAPI. |
+| `species_id` | bigint unsigned | nullable, foreign key para `species.id` | Espécie relacionada a este Pokémon. |
+| `name` | string | index, not null | Nome da forma específica do Pokémon. |
+| `height` | unsigned smallint | not null | Altura informada pela PokeAPI. |
+| `weight` | unsigned smallint | not null | Peso informado pela PokeAPI. |
+| `base_experience` | unsigned integer | nullable | Experiência base concedida pelo Pokémon. |
+| `created_at` | timestamp | nullable | Data de criação local do registro. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do registro. |
 
 Relacionamentos:
 
@@ -75,17 +75,23 @@ Relacionamentos:
 - `pokemon` possui muitos `types` via `pokemon_type`.
 - `pokemon` possui muitas `abilities` via `pokemon_ability`.
 
+Observação: `pokemons.name` e `species.name` podem ter o mesmo valor, mas representam conceitos diferentes na PokeAPI. `pokemons.name` identifica a forma específica usada nas métricas, enquanto `species.name` identifica a espécie, que concentra dados como `capture_rate`, `is_legendary` e `is_mythical`.
+
+Exemplos onde isso importa:
+- `pikachu` pode ter variações/costumes/formas diferentes, mas pertence à espécie `pikachu`.
+- `deoxys-normal`, `deoxys-attack`, `deoxys-defense` são Pokémon/formas diferentes, mas ligados à espécie `deoxys`.
+
 ### `stats`
 
 Catálogo das métricas numéricas da PokeAPI.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokeapi_id` | unsigned integer | unique, nullable |
-| `name` | string | unique, not null |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno da métrica no banco. |
+| `pokeapi_id` | unsigned integer | unique, nullable | Identificador da métrica na PokeAPI. |
+| `name` | string | unique, not null | Nome da métrica, como `hp` ou `attack`. |
+| `created_at` | timestamp | nullable | Data de criação local do registro. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do registro. |
 
 Valores esperados:
 
@@ -104,36 +110,38 @@ Relacionamentos:
 
 Tabela pivô entre `pokemons` e `stats`, armazenando o valor da métrica para cada Pokémon.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokemon_id` | bigint unsigned | foreign key para `pokemons.id`, not null |
-| `stat_id` | bigint unsigned | foreign key para `stats.id`, not null |
-| `base_stat` | unsigned integer | not null |
-| `effort` | unsigned integer | default 0 |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno do vínculo no banco. |
+| `pokemon_id` | bigint unsigned | foreign key para `pokemons.id`, not null | Pokémon que recebeu a métrica. |
+| `stat_id` | bigint unsigned | foreign key para `stats.id`, not null | Métrica associada ao Pokémon. |
+| `base_stat` | unsigned integer | not null | Valor base da métrica para o Pokémon. |
+| `effort` | unsigned integer | default 0 | Valor de esforço associado à métrica. |
+| `created_at` | timestamp | nullable | Data de criação local do vínculo. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do vínculo. |
 
 Índices e constraints:
 
 - unique composto: `pokemon_id`, `stat_id`.
-- index composto: `stat_id`, `base_stat`.
+- index composto: `stat_id`, `base_stat`, `pokemon_id`.
 
 Uso principal:
 
 - Ordenar Pokémon por uma métrica específica no endpoint `/api/metrics/pokemon`.
+- O índice inclui `pokemon_id` para ajudar o MySQL a filtrar pela métrica, ordenar pelo valor e resolver o join com `pokemons` com menos leituras extras.
+- Quando há empate no valor da métrica, `pokemon_id` é usado como desempate para manter a resposta estável e aproveitar o mesmo índice.
 
 ### `types`
 
 Catálogo de tipos de Pokémon.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokeapi_id` | unsigned integer | unique, nullable |
-| `name` | string | unique, not null |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno do tipo no banco. |
+| `pokeapi_id` | unsigned integer | unique, nullable | Identificador do tipo na PokeAPI. |
+| `name` | string | unique, not null | Nome do tipo, como `fire` ou `water`. |
+| `created_at` | timestamp | nullable | Data de criação local do registro. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do registro. |
 
 Relacionamentos:
 
@@ -143,19 +151,20 @@ Relacionamentos:
 
 Tabela pivô entre `pokemons` e `types`.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokemon_id` | bigint unsigned | foreign key para `pokemons.id`, not null |
-| `type_id` | bigint unsigned | foreign key para `types.id`, not null |
-| `slot` | unsigned tinyint | not null |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno do vínculo no banco. |
+| `pokemon_id` | bigint unsigned | foreign key para `pokemons.id`, not null | Pokémon que possui o tipo. |
+| `type_id` | bigint unsigned | foreign key para `types.id`, not null | Tipo associado ao Pokémon. |
+| `slot` | unsigned tinyint | not null | Posição do tipo na lista retornada pela PokeAPI. |
+| `created_at` | timestamp | nullable | Data de criação local do vínculo. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do vínculo. |
 
 Índices e constraints:
 
 - unique composto: `pokemon_id`, `type_id`.
 - unique composto: `pokemon_id`, `slot`.
+- index composto: `type_id`, `pokemon_id`.
 
 Comportamento esperado:
 
@@ -163,18 +172,19 @@ Comportamento esperado:
 - Se dois ou mais Pokémon usarem o mesmo tipo, todos apontam para o mesmo `type_id`.
 - A constraint única em `types.name` evita duplicação do catálogo.
 - A constraint única em `pokemon_type(pokemon_id, type_id)` evita duplicar o vínculo em reprocessamentos.
+- O índice `type_id`, `pokemon_id` prepara a tabela para consultas reversas, como listar Pokémon por tipo, sem depender de varredura da pivô.
 
 ### `abilities`
 
 Catálogo de habilidades de Pokémon.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokeapi_id` | unsigned integer | unique, nullable |
-| `name` | string | unique, not null |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno da habilidade no banco. |
+| `pokeapi_id` | unsigned integer | unique, nullable | Identificador da habilidade na PokeAPI. |
+| `name` | string | unique, not null | Nome da habilidade. |
+| `created_at` | timestamp | nullable | Data de criação local do registro. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do registro. |
 
 Relacionamentos:
 
@@ -184,20 +194,21 @@ Relacionamentos:
 
 Tabela pivô entre `pokemons` e `abilities`.
 
-| Campo | Tipo | Regras |
-| --- | --- | --- |
-| `id` | bigint unsigned | primary key |
-| `pokemon_id` | bigint unsigned | foreign key para `pokemons.id`, not null |
-| `ability_id` | bigint unsigned | foreign key para `abilities.id`, not null |
-| `is_hidden` | boolean | default false |
-| `slot` | unsigned tinyint | not null |
-| `created_at` | timestamp | nullable |
-| `updated_at` | timestamp | nullable |
+| Campo | Tipo | Regras | Significado |
+| --- | --- | --- | --- |
+| `id` | bigint unsigned | primary key | Identificador interno do vínculo no banco. |
+| `pokemon_id` | bigint unsigned | foreign key para `pokemons.id`, not null | Pokémon que possui a habilidade. |
+| `ability_id` | bigint unsigned | foreign key para `abilities.id`, not null | Habilidade associada ao Pokémon. |
+| `is_hidden` | boolean | default false | Indica se a habilidade é oculta. |
+| `slot` | unsigned tinyint | not null | Posição da habilidade na lista retornada pela PokeAPI. |
+| `created_at` | timestamp | nullable | Data de criação local do vínculo. |
+| `updated_at` | timestamp | nullable | Data da última atualização local do vínculo. |
 
 Índices e constraints:
 
 - unique composto: `pokemon_id`, `ability_id`.
 - unique composto: `pokemon_id`, `slot`.
+- index composto: `ability_id`, `pokemon_id`.
 
 ## Índices Principais
 
@@ -207,40 +218,13 @@ Tabela pivô entre `pokemons` e `abilities`.
 | `pokemons` | index `name` | busca e ordenação secundária |
 | `species` | unique `pokeapi_id` | idempotência da ingestão |
 | `stats` | unique `name` | validação de métricas |
-| `pokemon_stats` | index `stat_id`, `base_stat` | ranking por métrica |
+| `pokemon_stats` | index `stat_id`, `base_stat`, `pokemon_id` | ranking por métrica e join com `pokemons` |
 | `pokemon_stats` | unique `pokemon_id`, `stat_id` | evita duplicação |
 | `types` | unique `name` | catálogo normalizado |
 | `pokemon_type` | unique `pokemon_id`, `type_id` | evita duplicação |
 | `pokemon_type` | unique `pokemon_id`, `slot` | preserva um tipo por posição |
+| `pokemon_type` | index `type_id`, `pokemon_id` | consulta reversa por tipo |
 | `abilities` | unique `name` | catálogo normalizado |
 | `pokemon_ability` | unique `pokemon_id`, `ability_id` | evita duplicação |
 | `pokemon_ability` | unique `pokemon_id`, `slot` | preserva uma habilidade por posição |
-
-## Comportamento Esperado na Ingestão
-
-- Registros vindos da PokeAPI devem ser persistidos de forma idempotente.
-- Rodar o command mais de uma vez não deve duplicar Pokémon, stats, types, abilities, species ou vínculos.
-- Quando um dado externo mudar, o registro local deve ser atualizado.
-- Cada Pokémon é persistido em uma transação própria.
-- Se falhar no meio do processo, os Pokémon já concluídos permanecem salvos e consistentes.
-- Ao rodar o command novamente, os registros existentes são reutilizados ou atualizados por chaves únicas.
-
-## Consulta de Métricas
-
-O endpoint de métricas deve consultar:
-
-- `stats.name` para identificar a métrica solicitada.
-- `pokemon_stats.base_stat` para ordenar os resultados.
-- `pokemons` para retornar dados como `name`, `height`, `weight` e `base_experience`.
-
-O campo `field` muda apenas a projeção retornada. A ordenação permanece em `pokemon_stats.base_stat`, exposto na resposta como `metric_value`.
-
-Campos permitidos no parâmetro `field`:
-
-- `id`
-- `pokemon_id`
-- `name`
-- `base_experience`
-- `height`
-- `weight`
-- `metric_value`
+| `pokemon_ability` | index `ability_id`, `pokemon_id` | consulta reversa por habilidade |

@@ -16,7 +16,7 @@ class PokemonMetricsQuery
             ->where('stats.name', $filters->metric)
             ->selectRaw("{$filters->selectedColumn()} as {$filters->field}")
             ->orderBy('pokemon_stats.base_stat', $filters->order)
-            ->orderBy('pokemons.name')
+            ->orderBy('pokemon_stats.pokemon_id', $filters->order)
             ->paginate($filters->limit);
     }
 }
