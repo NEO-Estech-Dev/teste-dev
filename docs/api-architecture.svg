@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">Desenho arquitetural da API</title>
+  <desc id="desc">Resumo visual da arquitetura da Poke API com cliente, Laravel, autenticação, consulta de métricas, ingestão, filas, banco de dados e PokeAPI.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg{fill:#f8fafc}
+      .title{font-family:Arial,sans-serif;font-size:30px;font-weight:700;fill:#0f172a}
+      .subtitle{font-family:Arial,sans-serif;font-size:15px;font-weight:400;fill:#475569}
+      .group{fill:#ffffff;stroke:#e2e8f0;stroke-width:2;rx:12}
+      .group-label{font-family:Arial,sans-serif;font-size:14px;font-weight:700;fill:#475569}
+      .box{fill:#ffffff;stroke:#cbd5e1;stroke-width:2;rx:8}
+      .box-blue{fill:#eff6ff;stroke:#60a5fa;stroke-width:2;rx:8}
+      .box-green{fill:#ecfdf5;stroke:#34d399;stroke-width:2;rx:8}
+      .box-amber{fill:#fffbeb;stroke:#f59e0b;stroke-width:2;rx:8}
+      .box-red{fill:#fff1f2;stroke:#fb7185;stroke-width:2;rx:8}
+      .label{font-family:Arial,sans-serif;font-size:17px;font-weight:700;fill:#0f172a}
+      .text{font-family:Arial,sans-serif;font-size:13px;font-weight:400;fill:#334155}
+      .line{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#arrow)}
+      .dash{stroke:#64748b;stroke-width:2;stroke-dasharray:7 7;fill:none;marker-end:url(#arrow)}
+      .caption{font-family:Arial,sans-serif;font-size:12px;font-weight:700;fill:#475569}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="760"/>
+  <text class="title" x="48" y="58">Poke API - desenho arquitetural</text>
+  <text class="subtitle" x="48" y="84">Fluxos principais: autenticação, consulta de métricas e ingestão síncrona ou assíncrona.</text>
+
+  <rect class="group" x="48" y="118" width="360" height="452"/>
+  <text class="group-label" x="72" y="146">Entrada HTTP</text>
+
+  <rect class="box-blue" x="96" y="176" width="220" height="78"/>
+  <text class="label" x="206" y="207" text-anchor="middle">Cliente</text>
+  <text class="text" x="206" y="231" text-anchor="middle">Postman, cURL ou frontend</text>
+
+  <rect class="box" x="96" y="318" width="220" height="78"/>
+  <text class="label" x="206" y="349" text-anchor="middle">Sanctum</text>
+  <text class="text" x="206" y="373" text-anchor="middle">Bearer Token</text>
+
+  <rect class="box-green" x="96" y="460" width="220" height="78"/>
+  <text class="label" x="206" y="491" text-anchor="middle">Métricas</text>
+  <text class="text" x="206" y="515" text-anchor="middle">GET /api/metrics/pokemon</text>
+
+  <rect class="group" x="460" y="118" width="360" height="452"/>
+  <text class="group-label" x="484" y="146">Aplicação Laravel</text>
+
+  <rect class="box-blue" x="530" y="168" width="220" height="78"/>
+  <text class="label" x="640" y="199" text-anchor="middle">Octane/Swoole</text>
+  <text class="text" x="640" y="223" text-anchor="middle">servidor HTTP</text>
+
+  <rect class="box" x="530" y="288" width="220" height="78"/>
+  <text class="label" x="640" y="319" text-anchor="middle">Controller + Request</text>
+  <text class="text" x="640" y="343" text-anchor="middle">orquestra e valida</text>
+
+  <rect class="box" x="530" y="408" width="220" height="78"/>
+  <text class="label" x="640" y="439" text-anchor="middle">Query + Resource</text>
+  <text class="text" x="640" y="463" text-anchor="middle">consulta e formata JSON</text>
+
+  <rect class="group" x="872" y="118" width="360" height="452"/>
+  <text class="group-label" x="896" y="146">Dados e processamento</text>
+
+  <rect class="box-green" x="942" y="168" width="220" height="78"/>
+  <text class="label" x="1052" y="199" text-anchor="middle">MySQL</text>
+  <text class="text" x="1052" y="223" text-anchor="middle">dados normalizados</text>
+
+  <rect class="box-amber" x="942" y="288" width="220" height="78"/>
+  <text class="label" x="1052" y="319" text-anchor="middle">Redis</text>
+  <text class="text" x="1052" y="343" text-anchor="middle">fila e locks</text>
+
+  <rect class="box-red" x="942" y="408" width="220" height="78"/>
+  <text class="label" x="1052" y="439" text-anchor="middle">PokeAPI</text>
+  <text class="text" x="1052" y="463" text-anchor="middle">origem externa</text>
+
+  <rect class="box" x="252" y="640" width="220" height="70"/>
+  <text class="label" x="362" y="670" text-anchor="middle">Artisan</text>
+  <text class="text" x="362" y="692" text-anchor="middle">pokeapi:ingest</text>
+
+  <rect class="box-amber" x="530" y="640" width="220" height="70"/>
+  <text class="label" x="640" y="670" text-anchor="middle">Horizon</text>
+  <text class="text" x="640" y="692" text-anchor="middle">workers e painel</text>
+
+  <rect class="box" x="808" y="640" width="220" height="70"/>
+  <text class="label" x="918" y="670" text-anchor="middle">Jobs</text>
+  <text class="text" x="918" y="692" text-anchor="middle">chunks com retry</text>
+
+  <path class="line" d="M206 254 V310"/>
+  <path class="line" d="M206 396 V452"/>
+  <path class="line" d="M316 499 H522"/>
+  <path class="line" d="M640 246 V280"/>
+  <path class="line" d="M640 366 V400"/>
+  <path class="line" d="M750 447 H934"/>
+  <text class="caption" x="820" y="432">ranking</text>
+
+  <path class="line" d="M362 640 V604 H1052 V494"/>
+  <text class="caption" x="385" y="626">modo síncrono</text>
+
+  <path class="line" d="M472 675 H522"/>
+  <path class="line" d="M750 675 H800"/>
+  <path class="line" d="M918 640 V604 H1052 V494"/>
+  <path class="dash" d="M1028 640 V604 H1192 V207 H1170"/>
+  <text class="caption" x="490" y="660">--async</text>
+  <text class="caption" x="774" y="660">processa</text>
+  <text class="caption" x="1120" y="592">persiste</text>
+</svg>

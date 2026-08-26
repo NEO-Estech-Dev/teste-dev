@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900" role="img" aria-labelledby="title desc">
+  <title id="title">Desenho do banco de dados</title>
+  <desc id="desc">Resumo visual da modelagem relacional com pokemons, species, stats, types, abilities e tabelas pivô.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg{fill:#f8fafc}
+      .title{font-family:Arial,sans-serif;font-size:30px;font-weight:700;fill:#0f172a}
+      .subtitle{font-family:Arial,sans-serif;font-size:15px;font-weight:400;fill:#475569}
+      .table{fill:#fff;stroke:#cbd5e1;stroke-width:2;rx:8}
+      .head-main{fill:#e0f2fe}
+      .head-pivot{fill:#dcfce7}
+      .head-catalog{fill:#fef3c7}
+      .name{font-family:Arial,sans-serif;font-size:17px;font-weight:700;fill:#0f172a}
+      .tag{font-family:Arial,sans-serif;font-size:12px;font-weight:700;fill:#0369a1}
+      .col{font-family:Arial,sans-serif;font-size:13px;font-weight:400;fill:#334155}
+      .line{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#arrow)}
+      .note{font-family:Arial,sans-serif;font-size:12px;font-weight:700;fill:#475569}
+      .foot{font-family:Arial,sans-serif;font-size:12px;font-weight:400;fill:#64748b}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="900"/>
+  <text class="title" x="48" y="58">Poke API - desenho do banco de dados</text>
+  <text class="subtitle" x="48" y="84">Tabelas normalizadas para ingestão idempotente, ranking por métricas e consultas por relacionamentos.</text>
+
+  <g transform="translate(94 126)">
+    <rect class="table" width="310" height="222"/>
+    <rect class="head-main" width="310" height="46" rx="8"/>
+    <text class="name" x="22" y="30">pokemons</text>
+    <text class="tag" x="226" y="30">principal</text>
+    <text class="col" x="22" y="72">id PK</text>
+    <text class="col" x="22" y="96">pokeapi_id unique</text>
+    <text class="col" x="22" y="120">species_id FK</text>
+    <text class="col" x="22" y="144">name index</text>
+    <text class="col" x="22" y="168">height, weight</text>
+    <text class="col" x="22" y="192">base_experience</text>
+  </g>
+
+  <g transform="translate(574 126)">
+    <rect class="table" width="330" height="222"/>
+    <rect class="head-catalog" width="330" height="46" rx="8"/>
+    <text class="name" x="22" y="30">species</text>
+    <text class="tag" x="238" y="30">catálogo</text>
+    <text class="col" x="22" y="72">id PK</text>
+    <text class="col" x="22" y="96">pokeapi_id unique</text>
+    <text class="col" x="22" y="120">name index</text>
+    <text class="col" x="22" y="144">base_happiness</text>
+    <text class="col" x="22" y="168">capture_rate</text>
+    <text class="col" x="22" y="192">is_baby, is_legendary, is_mythical</text>
+  </g>
+
+  <g transform="translate(72 426)">
+    <rect class="table" width="320" height="178"/>
+    <rect class="head-pivot" width="320" height="46" rx="8"/>
+    <text class="name" x="22" y="30">pokemon_stats</text>
+    <text class="tag" x="236" y="30">pivô</text>
+    <text class="col" x="22" y="72">pokemon_id FK</text>
+    <text class="col" x="22" y="96">stat_id FK</text>
+    <text class="col" x="22" y="120">base_stat</text>
+    <text class="col" x="22" y="144">effort</text>
+    <text class="col" x="22" y="166">idx: stat_id, base_stat, pokemon_id</text>
+  </g>
+
+  <g transform="translate(480 426)">
+    <rect class="table" width="320" height="154"/>
+    <rect class="head-pivot" width="320" height="46" rx="8"/>
+    <text class="name" x="22" y="30">pokemon_type</text>
+    <text class="tag" x="236" y="30">pivô</text>
+    <text class="col" x="22" y="72">pokemon_id FK</text>
+    <text class="col" x="22" y="96">type_id FK</text>
+    <text class="col" x="22" y="120">slot</text>
+    <text class="col" x="22" y="142">idx: type_id, pokemon_id</text>
+  </g>
+
+  <g transform="translate(888 426)">
+    <rect class="table" width="320" height="178"/>
+    <rect class="head-pivot" width="320" height="46" rx="8"/>
+    <text class="name" x="22" y="30">pokemon_ability</text>
+    <text class="tag" x="236" y="30">pivô</text>
+    <text class="col" x="22" y="72">pokemon_id FK</text>
+    <text class="col" x="22" y="96">ability_id FK</text>
+    <text class="col" x="22" y="120">is_hidden</text>
+    <text class="col" x="22" y="144">slot</text>
+    <text class="col" x="22" y="166">idx: ability_id, pokemon_id</text>
+  </g>
+
+  <g transform="translate(72 690)">
+    <rect class="table" width="320" height="150"/>
+    <rect class="head-catalog" width="320" height="46" rx="8"/>
+    <text class="name" x="22" y="30">stats</text>
+    <text class="tag" x="230" y="30">catálogo</text>
+    <text class="col" x="22" y="72">id PK</text>
+    <text class="col" x="22" y="96">pokeapi_id unique nullable</text>
+    <text class="col" x="22" y="120">name unique</text>
+  </g>
+
+  <g transform="translate(480 690)">
+    <rect class="table" width="320" height="150"/>
+    <rect class="head-catalog" width="320" height="46" rx="8"/>
+    <text class="name" x="22" y="30">types</text>
+    <text class="tag" x="230" y="30">catálogo</text>
+    <text class="col" x="22" y="72">id PK</text>
+    <text class="col" x="22" y="96">pokeapi_id unique nullable</text>
+    <text class="col" x="22" y="120">name unique</text>
+  </g>
+
+  <g transform="translate(888 690)">
+    <rect class="table" width="320" height="150"/>
+    <rect class="head-catalog" width="320" height="46" rx="8"/>
+    <text class="name" x="22" y="30">abilities</text>
+    <text class="tag" x="230" y="30">catálogo</text>
+    <text class="col" x="22" y="72">id PK</text>
+    <text class="col" x="22" y="96">pokeapi_id unique nullable</text>
+    <text class="col" x="22" y="120">name unique</text>
+  </g>
+
+  <path class="line" d="M404 237 H566"/>
+  <text class="note" x="466" y="222">N:1</text>
+
+  <path class="line" d="M249 348 V418"/>
+  <text class="note" x="206" y="372">1:N</text>
+
+  <path class="line" d="M249 348 V386 H640 V418"/>
+  <text class="note" x="606" y="372">1:N</text>
+
+  <path class="line" d="M249 348 V386 H1048 V418"/>
+  <text class="note" x="1014" y="372">1:N</text>
+
+  <path class="line" d="M232 604 V682"/>
+  <text class="note" x="247" y="650">N:1</text>
+
+  <path class="line" d="M640 580 V682"/>
+  <text class="note" x="655" y="638">N:1</text>
+
+  <path class="line" d="M1048 604 V682"/>
+  <text class="note" x="1063" y="650">N:1</text>
+
+  <text class="foot" x="72" y="874">As tabelas de catálogo evitam duplicidade; as tabelas pivô guardam relações e atributos do vínculo.</text>
+</svg>

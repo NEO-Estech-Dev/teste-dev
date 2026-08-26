@@ -1,108 +1,166 @@
-# 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
+# Teste Técnico: API de Métricas Pokémon
 
-Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico** e também sua **velocidade de desenvolvimento**.  
-Leia atentamente as instruções antes de iniciar.
+API REST em Laravel para ingerir dados da PokeAPI, salvar em MySQL e consultar rankings de Pokémon por métricas.
 
----
+## Collection Postman (validação da API)
 
-## 🎯 Objetivo do Desafio
+Tem um collection pronta para importar para o postman em [collection](./docs/poke-api.postman_collection.json)
 
-Implementar uma **API REST** utilizando **Laravel (PHP)** e **MySQL**, cujo objetivo é realizar a **ingestão de dados** da API pública de Pokémons e disponibilizar **métricas consultáveis** a partir desses dados.
+## Ambiente
 
-A API pública a ser utilizada é:  
-👉 https://pokeapi.co/
+Requisitos:
 
----
+- Docker e Docker Compose.
+- PHP e Composer apenas para instalar as dependências iniciais do Laravel Sail.
 
-## 📋 Requisitos Funcionais
+Instale as dependências:
 
-### 1️⃣ Ingestão de Dados
+```bash
+composer install
+```
 
-Sua aplicação deve possuir um **Command do Laravel** responsável por:
+Crie o `.env` e gere a chave da aplicação:
 
-- Consumir a API pública do PokeAPI;
-- Persistir os dados relevantes no banco de dados MySQL;
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
----
+Suba o ambiente Docker:
 
-### 2️⃣ Endpoint de Métricas
+```bash
+./vendor/bin/sail up -d
+```
 
-Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
+A API ficará disponível em:
 
-A rota deve permitir, **de forma opcional**, os parâmetros:
+```text
+http://localhost:8000
+```
 
-- **Métrica a ser analisada**, por exemplo:
-  - `hp`
+## Banco de Dados
 
-- **Campo específico a ser retornado**
-  - Exemplo: retornar apenas o `name` no ranking.
+(Aguarde até o container MySQL ficar disponível)
+Execute as migrations:
 
-- **Ordenação**
-  - Maiores valores (melhores)
-  - Menores valores (piores)
+```bash
+./vendor/bin/sail artisan migrate
+```
+## Ingestão de Dados
 
-📌 **Observação:**  
-Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
-Você pode definir outros parâmetros que garantam performance, melhor visibilidade, etc.
+Ingerir todos os Pokémon disponíveis na PokeAPI:
 
----
+```bash
+./vendor/bin/sail artisan pokeapi:ingest
+```
 
-## 🗄️ Banco de Dados
+Ingestão rápida para validação:
 
-- O banco de dados deve ser modelado e criado **exclusivamente via Migrations do Laravel**;
-- Fique à vontade para definir a melhor modelagem, desde que faça sentido para o domínio do problema.
+```bash
+./vendor/bin/sail artisan pokeapi:ingest --fresh --limit=20
+```
 
----
+Para usar a ingestão assíncrona, deixe o Horizon rodando em outro terminal:
 
-## 🧰 Tecnologias Obrigatórias
+```bash
+./vendor/bin/sail artisan horizon
+```
 
-O projeto **deve** utilizar:
+Depois despache a ingestão:
 
-- PHP
-- Framework **Laravel**
-- **MySQL**
-- **Docker** (para construção do ambiente de desenvolvimento)
+```bash
+./vendor/bin/sail artisan pokeapi:ingest --async --fresh --limit=100 --chunk=50
+```
 
----
+Painel do Horizon:
 
-## 🚀 Entrega do Desafio
+```text
+http://localhost:8000/horizon
+```
 
-Para entregar o teste, siga rigorosamente os passos abaixo:
+Se os jobs aparecerem em `Pending Jobs` e não saírem dali, confirme se o worker está ativo:
 
-1. Faça um **fork** deste repositório  
-   > ⚠️ Apenas clonar o repositório não permitirá o push.
+```bash
+./vendor/bin/sail artisan horizon:status
+```
 
-2. Crie uma **branch com seu nome completo**;
+Opções úteis:
 
-3. Atualize o arquivo `teste-pratico.md`, descrevendo claramente:
-   - Como subir o ambiente (Docker);
-   - Comandos necessários (migrations, seeds, ingestão de dados, etc);
-   - Qualquer observação relevante para execução do projeto.
+```bash
+./vendor/bin/sail artisan pokeapi:ingest --limit=100 --offset=0 --chunk=50
+```
 
-4. Após finalizar, abra um **Pull Request** para o repositório original.
+A ingestão padrão é síncrona, paginada e idempotente. Com `--async`, o comando cria jobs na fila Redis `pokeapi-ingestion` e retorna um `batch_id`. Se falhar no meio, os Pokémon já processados permanecem consistentes e o comando pode ser executado novamente sem duplicar registros.
 
----
+## Autenticação
 
-## ⭐ Bônus (Opcional)
+Registrar usuário:
 
-- Implementar autenticação de usuários utilizando **Laravel Sanctum**.
-- Usar Octane / Swoole
-- Criar testes automatizados
+```bash
+curl -sS -X POST http://localhost:8000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ash","email":"ash@example.com","password":"password123"}'
+```
 
----
+Login:
 
-## 🔍 O que será avaliado?
+```bash
+curl -sS -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ash@example.com","password":"password123"}'
+```
 
-- Configuração e automação do ambiente com Docker;
-- Modelagem e transformação de dados;
-- Organização e legibilidade do código;
-- Clareza no raciocínio lógico;
-- Performance e otimização das consultas;
-- Boas práticas com Laravel e PHP.
+Use o `token` retornado como Bearer Token.
 
----
+Logout:
 
-## 🍀 Boa sorte!
+```bash
+curl -sS -X POST http://localhost:8000/api/logout \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
 
-Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
+## Métricas
 
+Endpoint protegido:
+
+```http
+GET /api/metrics/pokemon
+```
+
+Exemplo:
+
+```bash
+curl -sS "http://localhost:8000/api/metrics/pokemon?metric=hp&field=name&order=desc&limit=10" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+Parâmetros:
+
+| Parâmetro | Padrão | Valores |
+| --- | --- | --- |
+| `metric` | `hp` | `hp`, `attack`, `defense`, `special-attack`, `special-defense`, `speed` |
+| `field` | `name` | `id`, `pokemon_id`, `name`, `base_experience`, `height`, `weight`, `metric_value` |
+| `order` | `desc` | `asc`, `desc` |
+| `limit` | `10` | inteiro entre `1` e `100` |
+| `page` | `1` | paginação padrão |
+
+## Testes
+
+```bash
+./vendor/bin/sail artisan test
+```
+
+Também é possível rodar localmente:
+
+```bash
+php artisan test
+```
+
+## Observações
+
+- O container da aplicação executa Laravel Octane com Swoole.
+- A ingestão assíncrona usa Redis e pode ser acompanhada pelo Horizon em `/horizon` no ambiente local.
+- As rotas de métricas exigem autenticação via Laravel Sanctum.
+- Os comandos de banco devem ser executados via Sail, pois o `.env` usa `DB_HOST=mysql`.
+- Decisões técnicas: [`docs/tech-decisions.md`](docs/tech-decisions.md).
+- Modelagem do banco: [`docs/database-design.md`](docs/database-design.md).
