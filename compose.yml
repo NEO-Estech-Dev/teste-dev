@@ -1,0 +1,47 @@
+services:
+  api-teste:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laravel-nginx-allinone
+    container_name: api-teste
+    ports:
+      - "80:80"
+    volumes:
+      - ./Api:/var/www/html
+    networks:
+      - laravel
+    restart: unless-stopped
+    depends_on:
+      - db-teste
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db-teste
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=123456
+
+  db-teste:
+    image: mysql:8.0
+    container_name: mysql-db-teste
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - laravel
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  laravel:
+    driver: bridge
+
+volumes:
+  mysql_data:

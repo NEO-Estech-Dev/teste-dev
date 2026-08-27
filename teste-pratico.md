@@ -1,3 +1,43 @@
+**# Teste Técnico – Tutorial Instalação e Uso**
+
+1 - Configuração do ambiete docker
+
+    * docker compose up --build
+
+2 - Preparação das migrations
+
+    * php artisan migrate --seed
+
+3 - Importação dos dados da PokeAPI (execute em terminais diferentes)
+
+    * php artisan queue:work
+    * php artisan pokemon:sincronizar (comando adicionado)
+     
+4 - Os endpoints inseridos foram:
+
+    1 - /sessao/login.
+    2 - /sessao/cadastrar.
+    3 - /pokemon (indexMetricas - Requer autenticação).
+
+5 - Sobre os endpoints inseridos:
+
+    1 - login - payload:
+        * email: teste@gmail.com
+        * password: 12345678
+    
+    2 - cadastrar - payload:
+        * name:"Usuario Teste",
+        * email:"teste@gmail.com",
+        * password:"12345678"
+    
+    3 - pokemon payload(indexMetricas) - payload:
+        * page: 1,
+        * limit: 10,
+        * fields: name,height...  (name, height, weight, order, specie, base_experience)
+        * metric: height (height, weight, order, specie e base_experience)
+        * order: asc (asc ou desc)
+        
+
 # 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
 
 Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico**, **perfomance**, **escalabilidade** e também sua **velocidade de desenvolvimento**.  
