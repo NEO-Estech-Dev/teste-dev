@@ -1,110 +1,116 @@
 # 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
 
-Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico**, **perfomance**, **escalabilidade** e também sua **velocidade de desenvolvimento**.  
-Leia atentamente as instruções antes de iniciar.
+Bem-vindo à resolução do desafio técnico! Esta aplicação foi desenvolvida com foco extremo em **Performance, Escalabilidade e Boas Práticas**, atendendo a 100% dos requisitos obrigatórios e também a 100% dos requisitos bônus.
+Bem-vindo à resolução do desafio técnico! Esta aplicação foi desenvolvida com foco em **Performance, Escalabilidade e Boas Práticas**, buscando atender a todos os requisitos obrigatórios e também aos desafios bônus propostos.
 
 ---
 
-## 🎯 Objetivo do Desafio
+## 🚀 Como subir o ambiente (Docker)
 
-Implementar uma **API REST** utilizando **Laravel (PHP)** e **MySQL**, cujo objetivo é realizar a **ingestão de dados** da API pública de Pokémons e disponibilizar **métricas consultáveis** a partir desses dados.
+O ambiente de desenvolvimento foi orquestrado utilizando o **Laravel Sail** (Docker), o que garante uma execução limpa e padronizada.
 
-A API pública a ser utilizada é:  
-👉 https://pokeapi.co/
+**1. Instale as dependências do Composer**
+Como o container do Sail ainda não está rodando, utilize o composer local ou o container temporário do próprio Sail para instalar as dependências:
+```bash
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php83-composer:latest \
+    composer install --ignore-platform-reqs
+```
+*(Se você já tiver o composer local na máquina, basta rodar `composer install`)*
 
----
+**2. Configure as variáveis de ambiente**
+```bash
+cp .env.example .env
+```
+Nenhuma alteração extra é necessária no `.env`, pois ele já está configurado para o banco de dados do Docker (`DB_HOST=mysql`, etc).
 
-## 📋 Requisitos Funcionais
+**3. Suba os containers**
+```bash
+./vendor/bin/sail up -d
+```
 
-### 1️⃣ Ingestão de Dados
-
-Sua aplicação deve possuir um **Command do Laravel** responsável por:
-
-- Consumir a API pública do PokeAPI;
-- Persistir os dados relevantes no banco de dados MySQL;
-
----
-
-### 2️⃣ Endpoint de Métricas
-
-Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
-
-A rota deve permitir, **de forma opcional**, os parâmetros:
-
-- **Métrica a ser analisada**, por exemplo:
-  - `hp`
-
-- **Campo específico a ser retornado**
-  - Exemplo: retornar apenas o `name` no ranking.
-
-- **Ordenação**
-  - Maiores valores (melhores)
-  - Menores valores (piores)
-
-📌 **Observação:**  
-Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
-Você pode definir outros parâmetros que garantam performance, melhor visibilidade, etc.
+**4. Gere a chave da aplicação**
+```bash
+./vendor/bin/sail artisan key:generate
+```
 
 ---
 
-## 🗄️ Banco de Dados
+## 🗄️ Banco de Dados e Usuário Admin
 
-- O banco de dados deve ser modelado e criado **exclusivamente via Migrations do Laravel**;
-- Fique à vontade para definir a melhor modelagem, desde que faça sentido para o domínio do problema.
+Com os containers rodando, execute as migrations e os seeders.
+O Seeder já está configurado para criar o usuário padrão necessário para autenticação na API.
 
----
+```bash
+./vendor/bin/sail artisan migrate --seed
+```
 
-## 🧰 Tecnologias Obrigatórias
-
-O projeto **deve** utilizar:
-
-- PHP
-- Framework **Laravel**
-- **MySQL**
-- **Docker** (para construção do ambiente de desenvolvimento)
-
-- Caso sinta necessidade de outras tecnologias complementares, fique a vontade para utilizar.
+**Credenciais de Acesso (Geradas pelo Seeder):**
+- **Email:** `admin@estech.com`
+- **Senha:** `password`
 
 ---
 
-## 🚀 Entrega do Desafio
+## ⚡ Ingestão de Dados (PokeAPI)
 
-Para entregar o teste, siga rigorosamente os passos abaixo:
+Para popular o banco de dados, rode o Command criado exclusivamente para esta tarefa.
 
-1. Faça um **fork** deste repositório  
-   > ⚠️ Apenas clonar o repositório não permitirá o push.
-
-2. Crie uma **branch com seu nome completo**;
-
-3. Atualize o arquivo `teste-pratico.md`, descrevendo claramente:
-   - Como subir o ambiente (Docker);
-   - Comandos necessários (migrations, seeds, ingestão de dados, etc);
-   - Qualquer observação relevante para execução do projeto.
-
-4. Após finalizar, abra um **Pull Request** para o repositório original.
+```bash
+./vendor/bin/sail artisan app:ingest-pokemons --limit=150
+```
+> **Nota de Performance:** Este command não faz as requisições de forma sequencial (o que seria muito lento). Ele utiliza o `Http::pool` do Laravel para disparar lotes assíncronos (chunks) contra a PokeAPI, processando os dados de forma muito rápida. Além disso, a inserção no banco de dados é feita através de um único `upsert` em lote, economizando processamento e conexões com o banco.
 
 ---
 
-## ⭐ Bônus (Opcional)
+## 📡 Endpoints da API
 
-- Implementar autenticação de usuários utilizando **Laravel Sanctum**.
-- Usar Octane / Swoole
-- Criar testes automatizados
+Para facilitar a sua validação, os testes da API requerem o cabeçalho `Accept: application/json`.
+
+### 1. Login (Sanctum)
+- **POST** `http://localhost/api/login`
+- **Body (JSON):**
+```json
+{
+    "email": "admin@estech.com",
+    "password": "password"
+}
+```
+*Retornará o Bearer Token que deve ser usado no Header das próximas requisições (`Authorization: Bearer <token>`).*
+
+### 2. Consulta de Métricas de Pokémons
+- **GET** `http://localhost/api/metrics/pokemons`
+- **Headers:** `Authorization: Bearer <token>`
+- **Parâmetros da URL (Query Params - 100% opcionais):**
+  - `metric` (Padrão: `hp` | Permitidos: `hp, attack, defense, special_attack, special_defense, speed`)
+  - `sort` (Padrão: `desc` | Permitidos: `asc, desc`)
+  - `field` (Opcional | Retorna apenas o campo desejado do ranking)
+  - `per_page` (Padrão: `15` | Limite máximo configurado para paginação)
+
+**Exemplo de uso:** `http://localhost/api/metrics/pokemons?metric=attack&sort=desc&field=name`
+
+### 3. Logout
+- **POST** `http://localhost/api/logout`
+- **Headers:** `Authorization: Bearer <token>`
+*Invalida e revoga a chave da sessão atual por questões de segurança.*
 
 ---
 
-## 🔍 O que será avaliado?
+## 🏆 Decisões Arquiteturais e Destaques (Bônus)
 
-- Configuração e automação do ambiente com Docker;
-- Modelagem e transformação de dados;
-- Organização e legibilidade do código;
-- Clareza no raciocínio lógico;
-- Performance e otimização das consultas;
-- Boas práticas com Laravel e PHP.
+- **Laravel Octane (FrankenPHP vs Swoole):** O requisito bônus sugere o uso de Swoole. Optei por utilizar o **FrankenPHP**, que é o novo servidor padrão e recomendado pelo Laravel 11. Ele entrega performance assíncrona semelhante ou superior ao Swoole, porém com uma melhor experiência de desenvolvimento (não exige compilação de extensões C no host).
+- **Camada de Cache na API:** O endpoint de métricas utiliza `Cache::remember`. O Command de Ingestão realiza automaticamente o `Cache::flush()` ao concluir o upsert. Isso significa tempo de resposta em milissegundos para a API, batendo no banco de dados apenas na primeira requisição após uma sincronização.
+- **Segurança Ant-SQL Injection:** Foi criado o `PokemonMetricRequest` que utiliza validação `in:` para garantir que o usuário não consiga enviar nomes de colunas maliciosas para as cláusulas de ordenação (`orderBy`) do banco.
+- **Índices no Banco de Dados:** Todas as métricas (`hp`, `attack`, etc) foram indexadas na `migration`, permitindo que o MySQL resolva as queries de ordenação através de B-Trees instantaneamente, sem realizar *table scans*.
+- **Testes Automatizados (Pest/PHPUnit):** Foram criados testes de funcionalidade (Feature) abrangendo o isolamento de rotas pelo Sanctum e o comportamento do Command, incluindo o **Mock (`Http::fake`)** da PokeAPI para garantir que a suíte de testes rode de forma isolada, determinística e sem dependência de internet. Para rodar:
+  ```bash
+  ./vendor/bin/sail artisan test
+  ```
 
 ---
 
-## 🍀 Boa sorte!
-
-Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
-
+## 🎁 Bônus Extra: Collection do Insomnia/Postman
+Para auxiliar no teste manual dos endpoints, disponibilizei um arquivo chamado `insomnia_collection.json` na raiz do projeto. 
+Ele contém as requisições previamente configuradas (Login, Logout e exemplos das variações de consultas de métricas) e pode ser importado diretamente no Insomnia ou Postman.
