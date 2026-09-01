@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pokemon;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class PokemonIntegrationService
 {
@@ -65,11 +66,14 @@ class PokemonIntegrationService
             ['name', 'hp', 'attack', 'defense', 'special_attack', 'special_defense', 'speed', 'weight', 'height'] // O que atualizar se já existir
         );
 
+        // 5. Limpa o cache antigo para que a API retorne os dados novos na próxima requisição
+        Cache::flush();
+
         return count($dataToSave);
     }
 
     /**
-     * Método auxiliar para extrair o valor da métrica de dentro do array confuso da PokeAPI
+     * Método auxiliar para extrair o valor da métrica de dentro do array da PokeAPI
      */
     private function getStat(array $stats, string $statName): int
     {
