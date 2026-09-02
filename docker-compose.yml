@@ -1,0 +1,38 @@
+services:
+  app:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+        - ./:/var/www
+    depends_on:
+        - db
+    networks:
+        - laravel
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+        - "8000:80"
+    volumes:
+        - ./:/var/www
+        - ./docker/nginx/:/etc/nginx/conf.d/
+    networks:
+        - laravel
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - laravel
+
+networks:
+  laravel:
+    driver: bridge
