@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    libpq-dev \
     librdkafka-dev \
     zip \
     unzip \
@@ -18,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd sockets
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
