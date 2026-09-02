@@ -176,3 +176,36 @@ GET /api/metrics?metric=attack&order=asc&limit=5
 
 - Autenticação via Laravel Sanctum foi instalada na estrutura do projeto, disponível para uso caso necessário.
 - A ingestão é idempotente: pode ser executada repetidamente sem gerar dados duplicados.
+
+## Bônus: Autenticação com Laravel Sanctum
+
+Foi implementada autenticação via Sanctum, protegendo a ação de disparar a ingestão de dados (mantendo a consulta de métricas pública).
+
+### Login
+POST /api/login
+Content-Type: application/json
+{
+"email": "seu@email.com",
+"password": "sua-senha"
+}
+
+Retorna um token Bearer para uso nas rotas protegidas.
+
+### Sincronizar Pokémons (protegido)
+POST /api/pokemon/sync
+Authorization: Bearer {token}
+Content-Type: application/json
+{
+"limit": 151
+}
+
+Dispara a mesma lógica de ingestão do command `pokemon:ingest`, agora disponível também via API, restrita a usuários autenticados. O parâmetro `limit` é opcional (padrão 151).
+
+Para criar um usuário de teste, use `sail artisan tinker`:
+```php
+\App\Models\User::create([
+    'name' => 'Nome',
+    'email' => 'email@teste.com',
+    'password' => bcrypt('senha'),
+]);
+```
