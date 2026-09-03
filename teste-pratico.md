@@ -108,3 +108,35 @@ Para entregar o teste, siga rigorosamente os passos abaixo:
 
 Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
 
+---
+
+## Solução implementada
+
+### Execução
+
+```bash
+docker compose up -d --build
+docker compose exec app php artisan pokemon:ingest
+```
+
+As migrations são executadas automaticamente na inicialização. A API fica disponível em `http://localhost:8000` por Laravel Octane/Swoole. Não há seed obrigatório; a PokeAPI é carregada pelo comando acima. Para ingerir apenas uma amostra, use `--limit=100`.
+
+### Consulta
+
+O ranking está em `GET /api/v1/pokemon/metrics` e exige um token Sanctum. Crie-o por `POST /api/v1/auth/register` ou `POST /api/v1/auth/login`.
+
+Exemplo: `GET /api/v1/pokemon/metrics?metric=speed&direction=desc&fields=name,metric&per_page=10`.
+
+Os padrões são `metric=hp`, `direction=desc`, `fields=name,metric`, `per_page=20` e `page=1`. A referência completa dos parâmetros, exemplos de autenticação, decisões de modelagem e comandos operacionais está no [README.md](README.md).
+
+### Testes
+
+```bash
+docker compose exec app php artisan test
+docker compose exec app vendor/bin/pint --test
+```
+
+Foram incluídos os três bônus: autenticação com Sanctum, Octane/Swoole e testes automatizados.
+
+O pipeline em `.github/workflows/ci.yml` valida automaticamente o estilo com Pint, a suíte de testes, as migrations em MySQL e a construção da imagem Docker. A especificação OpenAPI e a collection do Postman estão na pasta `docs/`.
+

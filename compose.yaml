@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+    init: true
+    environment:
+      APP_NAME: Pokemon Metrics API
+      APP_ENV: local
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: http://localhost:${APP_PORT:-8000}
+      APP_LOCALE: pt_BR
+      APP_FALLBACK_LOCALE: pt_BR
+      APP_FAKER_LOCALE: pt_BR
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-pokemon}
+      DB_USERNAME: ${DB_USERNAME:-pokemon}
+      DB_PASSWORD: ${DB_PASSWORD:-pokemon}
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      POKEAPI_URL: https://pokeapi.co/api/v2
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "$$c=@file_get_contents('http://127.0.0.1:8000/up'); exit($$c === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-pokemon}
+      MYSQL_USER: ${DB_USERNAME:-pokemon}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pokemon}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  mysql-data:

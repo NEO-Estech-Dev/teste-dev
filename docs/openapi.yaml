@@ -1,0 +1,275 @@
+openapi: 3.1.0
+info:
+  title: Pokémon Metrics API
+  version: 1.0.0
+  description: API REST para ingestão de dados da PokeAPI e consulta de rankings de Pokémon.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Ambiente Docker padrão
+tags:
+  - name: Autenticação
+  - name: Métricas
+paths:
+  /auth/register:
+    post:
+      tags: [Autenticação]
+      summary: Cadastra um usuário e retorna um token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              name: Ash Ketchum
+              email: ash@example.com
+              password: pikachu123
+              password_confirmation: pikachu123
+      responses:
+        '201':
+          description: Usuário cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/login:
+    post:
+      tags: [Autenticação]
+      summary: Autentica um usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: ash@example.com
+              password: pikachu123
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/token:
+    delete:
+      tags: [Autenticação]
+      summary: Revoga o token utilizado na requisição
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Token revogado
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /pokemon/metrics:
+    get:
+      tags: [Métricas]
+      summary: Retorna o ranking de Pokémon por uma métrica
+      description: Todos os parâmetros são opcionais. A ordenação sempre usa a métrica escolhida, mesmo que ela não seja retornada em `fields`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: metric
+          in: query
+          schema:
+            type: string
+            default: hp
+            enum: [hp, attack, defense, special_attack, special_defense, speed]
+        - name: direction
+          in: query
+          schema:
+            type: string
+            default: desc
+            enum: [asc, desc]
+        - name: fields
+          in: query
+          description: Lista separada por vírgulas.
+          schema:
+            type: string
+            default: name,metric
+          example: name,metric
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: Ranking paginado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+              example:
+                data:
+                  - name: electrode
+                    metric: 150
+                meta:
+                  metric: speed
+                  direction: desc
+                  current_page: 1
+                  per_page: 20
+                  total: 1351
+                  last_page: 68
+                links:
+                  first: http://localhost:8000/api/v1/pokemon/metrics?page=1
+                  last: http://localhost:8000/api/v1/pokemon/metrics?page=68
+                  prev: null
+                  next: http://localhost:8000/api/v1/pokemon/metrics?page=2
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum token
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password, password_confirmation]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        password_confirmation:
+          type: string
+          format: password
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+    AuthResponse:
+      type: object
+      required: [user, token, token_type]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+    MetricsResponse:
+      type: object
+      required: [data, meta, links]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        meta:
+          type: object
+          required: [metric, direction, current_page, per_page, total, last_page]
+          properties:
+            metric:
+              type: string
+            direction:
+              type: string
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            last_page:
+              type: integer
+        links:
+          type: object
+          required: [first, last, prev, next]
+          properties:
+            first:
+              type: string
+              format: uri
+            last:
+              type: string
+              format: uri
+            prev:
+              type: [string, 'null']
+              format: uri
+            next:
+              type: [string, 'null']
+              format: uri
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+  responses:
+    Unauthenticated:
+      description: Token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Não autenticado.
+    ValidationError:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    TooManyRequests:
+      description: Limite de requisições excedido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Muitas requisições. Tente novamente mais tarde.
