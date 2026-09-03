@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
+if [ -z "${APP_KEY:-}" ] && ! grep -Eq '^APP_KEY=.+$' .env; then
+    php artisan key:generate --force --no-ansi
+fi
+
 php artisan config:clear
 php artisan migrate --force
 

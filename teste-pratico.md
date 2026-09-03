@@ -138,3 +138,5 @@ docker compose exec app vendor/bin/pint --test
 
 Foram incluídos os três bônus: autenticação com Sanctum, Octane/Swoole e testes automatizados.
 
+O pipeline em `.github/workflows/ci.yml` valida automaticamente o estilo com Pint, a suíte de testes, as migrations em MySQL e a construção da imagem Docker. A especificação OpenAPI e a collection do Postman estão na pasta `docs/`.
+

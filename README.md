@@ -12,6 +12,8 @@ docker compose up -d --build
 
 O container aguarda o MySQL ficar saudável, executa as migrations e inicia a API em `http://localhost:8000` com Laravel Octane e Swoole.
 
+Quando `APP_KEY` não é informada, o container gera uma chave temporária durante a inicialização. Em outros ambientes, defina uma chave persistente por variável de ambiente.
+
 Se a porta 8000 já estiver ocupada, defina outra antes de subir (`APP_PORT=8088 docker compose up -d --build`; no PowerShell, `$env:APP_PORT=8088; docker compose up -d --build`).
 
 Para verificar os serviços:
@@ -110,6 +112,13 @@ curl "http://localhost:8000/api/v1/pokemon/metrics?metric=attack&direction=asc&f
   -H "Accept: application/json" -H "Authorization: Bearer SEU_TOKEN"
 ```
 
+## Documentação da API
+
+- [`docs/openapi.yaml`](docs/openapi.yaml): especificação OpenAPI 3.1, importável no Swagger Editor, Postman e Insomnia.
+- [`docs/pokemon-api.postman_collection.json`](docs/pokemon-api.postman_collection.json): collection pronta, com armazenamento automático do token retornado pelo cadastro ou login.
+
+Na collection, altere a variável `base_url` se iniciar o projeto em outra porta, por exemplo `http://localhost:8088/api/v1`.
+
 ## Testes e qualidade
 
 ```bash
@@ -117,7 +126,9 @@ docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
 ```
 
-Os testes usam SQLite em memória e não alteram o banco MySQL de desenvolvimento. Eles cobrem autenticação, autorização, validação dos filtros, ordenação, seleção de campos, paginação, transformação da PokeAPI e idempotência da ingestão.
+Os testes usam SQLite em memória e não alteram o banco MySQL de desenvolvimento. Eles cobrem autenticação, autorização, todas as métricas permitidas, validação dos filtros, ordenação e desempate, seleção de campos, múltiplas páginas, transformação da PokeAPI, idempotência, opções do command e preservação de lotes após falhas.
+
+O workflow de CI executa Pint, testes, migrations em MySQL e build da imagem Docker a cada push ou Pull Request.
 
 ## Decisões técnicas
 

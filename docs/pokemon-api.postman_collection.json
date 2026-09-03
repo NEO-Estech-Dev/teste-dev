@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Pokémon Metrics API",
+    "description": "Cadastro, autenticação e consulta de rankings. O token retornado pelo cadastro ou login é salvo automaticamente na variável da collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api/v1" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Cadastrar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) pm.collectionVariables.set('token', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ash Ketchum\",\n  \"email\": \"ash@example.com\",\n  \"password\": \"pikachu123\",\n  \"password_confirmation\": \"pikachu123\"\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) pm.collectionVariables.set('token', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ash@example.com\",\n  \"password\": \"pikachu123\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Revogar token",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/auth/token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Métricas",
+      "item": [
+        {
+          "name": "Ranking padrão por HP",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/pokemon/metrics"
+          }
+        },
+        {
+          "name": "Dez Pokémon mais rápidos",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/pokemon/metrics?metric=speed&direction=desc&fields=name,metric&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["pokemon", "metrics"],
+              "query": [
+                { "key": "metric", "value": "speed" },
+                { "key": "direction", "value": "desc" },
+                { "key": "fields", "value": "name,metric" },
+                { "key": "per_page", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Menores ataques retornando somente nome",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/pokemon/metrics?metric=attack&direction=asc&fields=name",
+              "host": ["{{base_url}}"],
+              "path": ["pokemon", "metrics"],
+              "query": [
+                { "key": "metric", "value": "attack" },
+                { "key": "direction", "value": "asc" },
+                { "key": "fields", "value": "name" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

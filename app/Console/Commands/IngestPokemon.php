@@ -19,6 +19,7 @@ class IngestPokemon extends Command
         $batchSize = (int) $this->option('batch');
         $concurrency = (int) $this->option('concurrency');
         $start = (int) $this->option('start');
+        $processed = 0;
 
         if ($limit < 0 || $start < 0 || $batchSize < 1 || $batchSize > 50 || $concurrency < 1 || $concurrency > 10) {
             $this->error('Use limit/start >= 0, batch entre 1 e 50 e concurrency entre 1 e 10.');
@@ -32,7 +33,7 @@ class IngestPokemon extends Command
             $progress = $this->output->createProgressBar($total);
             $progress->start();
 
-            for ($processed = 0; $processed < $total; $processed += $batchSize) {
+            for (; $processed < $total; $processed += $batchSize) {
                 $size = min($batchSize, $total - $processed);
                 $items = $pokeApi->page($start + $processed, $size);
                 $rows = $pokeApi->details($items, $concurrency);
@@ -67,7 +68,9 @@ class IngestPokemon extends Command
             $this->newLine();
             report($exception);
             $this->error('Ingestão interrompida: '.$exception->getMessage());
-            $this->line('Os lotes anteriores foram preservados; execute novamente para continuar com seguranca.');
+            $nextOffset = $start + $processed;
+            $this->line('Os lotes anteriores foram preservados.');
+            $this->line("Continue com: php artisan pokemon:ingest --start={$nextOffset}");
 
             return self::FAILURE;
         }

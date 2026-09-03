@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\PokeApiService;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 class PokeApiServiceTest extends TestCase
 {
@@ -41,5 +42,19 @@ class PokeApiServiceTest extends TestCase
             'special_defense' => 50,
             'speed' => 90,
         ], (new PokeApiService)->transform($payload));
+    }
+
+    public function test_it_rejects_an_unexpected_pokeapi_payload(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('estrutura inesperada');
+
+        (new PokeApiService)->transform([
+            'id' => 25,
+            'name' => 'pikachu',
+            'height' => 4,
+            'weight' => 60,
+            'stats' => [],
+        ]);
     }
 }

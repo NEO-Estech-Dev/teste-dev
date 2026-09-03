@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\Console\Command\Command;
 use Tests\TestCase;
 
 class IngestPokemonCommandTest extends TestCase
@@ -30,6 +31,63 @@ class IngestPokemonCommandTest extends TestCase
             'hp' => 45,
             'special_attack' => 65,
         ]);
+    }
+
+    public function test_command_rejects_invalid_options(): void
+    {
+        foreach ([
+            ['--limit' => -1],
+            ['--start' => -1],
+            ['--batch' => 0],
+            ['--batch' => 51],
+            ['--concurrency' => 0],
+            ['--concurrency' => 11],
+        ] as $options) {
+            $this->artisan('pokemon:ingest', $options)
+                ->assertExitCode(Command::INVALID);
+        }
+    }
+
+    public function test_command_preserves_completed_batches_and_reports_the_resume_offset(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request): PromiseInterface|Response {
+            $url = $request->url();
+
+            if (str_ends_with($url, '/pokemon/3/')) {
+                return Http::response(['message' => 'temporary failure'], 503);
+            }
+
+            if (preg_match('~/pokemon/(\d+)/?$~', $url, $matches)) {
+                $id = (int) $matches[1];
+
+                return Http::response($this->pokemonPayload($id, "pokemon-{$id}"));
+            }
+
+            $limit = (int) ($request->data()['limit'] ?? 1);
+            $offset = (int) ($request->data()['offset'] ?? 0);
+
+            if ($limit === 1) {
+                return Http::response(['count' => 4, 'results' => []]);
+            }
+
+            return Http::response([
+                'count' => 4,
+                'results' => collect(range($offset + 1, $offset + $limit))->map(fn (int $id): array => [
+                    'name' => "pokemon-{$id}",
+                    'url' => "https://pokeapi.co/api/v2/pokemon/{$id}/",
+                ])->all(),
+            ]);
+        });
+
+        $this->artisan('pokemon:ingest', ['--limit' => 4, '--batch' => 2])
+            ->expectsOutputToContain('Continue com: php artisan pokemon:ingest --start=2')
+            ->assertFailed();
+
+        $this->assertDatabaseCount('pokemon', 2);
+        $this->assertDatabaseHas('pokemon', ['pokeapi_id' => 1]);
+        $this->assertDatabaseHas('pokemon', ['pokeapi_id' => 2]);
+        $this->assertDatabaseMissing('pokemon', ['pokeapi_id' => 3]);
     }
 
     private function responseFor(Request $request): PromiseInterface|Response
