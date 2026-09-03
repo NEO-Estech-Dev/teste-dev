@@ -37,4 +37,10 @@ return [
         ],
     ],
 
+    'pokeapi' => [
+        'base_url' => (string) env('POKEAPI_BASE_URL', 'https://pokeapi.co/api/v2'),
+        'timeout' => (int) env('POKEAPI_TIMEOUT', 10),
+        'concurrency' => (int) env('POKEAPI_CONCURRENCY', 5),
+    ],
+
 ];

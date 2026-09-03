@@ -198,3 +198,107 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+## Test organization
+
+Tests are organized first by test type (`Feature` or `Unit`) and then mirror
+the directory structure of the `app/` directory.
+
+Examples:
+
+* `app/Http/Controllers/UserController.php`
+  → `tests/Feature/Http/Controllers/UserControllerTest.php`
+
+* `app/Services/CreateUser.php`
+  → `tests/Unit/Services/CreateUserTest.php`
+
+* `app/Models/User.php`
+  → `tests/Unit/Models/UserTest.php`
+
+* `app/Actions/CreateOrder.php`
+  → `tests/Unit/Actions/CreateOrderTest.php`
+
+Use `tests/Feature` for tests that exercise application behavior across
+multiple layers, such as HTTP endpoints, controllers, middleware,
+authentication, database interactions, and integrations.
+
+Use `tests/Unit` for isolated tests of individual classes or units of logic.
+
+The choice between `Feature` and `Unit` should be based on the scope and
+behavior of the test, not only on the type or location of the class being tested.
+
+Within `tests/Feature` or `tests/Unit`, preserve the corresponding directory
+hierarchy from `app/` whenever one exists.
+
+Do not flatten tests directly under `tests/Feature` or `tests/Unit` when the
+tested class belongs to a nested directory under `app/`.
+
+## Test style
+
+When writing Pest tests, prefer `it()` over `test()`.
+
+Example:
+
+```php
+it('creates a user', function () {
+    // ...
+});
+```
+
+Avoid:
+
+```php
+test('it creates a user', function () {
+    // ...
+});
+```
+
+Use `test()` only when there is a clear reason to match existing code in the same test file or directory.
+
+## Model Conventions
+- Never use $fillable or $guarded
+- Add property annotations like: "@property-read int $id" to all columns in the table related to the model
+- Use Enums for status fields, not magic strings
+- Relationships must have return types
+- Scopes should be typed and named descriptively
+
+### Model example:
+```php
+declare(strict_types=1);
+namespace App\Models;
+use App\Enums\OrderStatus;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * @property-read int $id
+ * @property-read string $user_id
+ * @property-read OrderStatus $status
+ * @property-read string $total_amount
+ * @property-read string $notes
+*/
+class Order extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'status' => OrderStatus::class,  // Enum cast, not string
+            'total_amount' => 'decimal:2',
+        ];
+    }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+    // Scope: descriptive name, typed builder return
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', OrderStatus::Pending);
+    }
+}
+```

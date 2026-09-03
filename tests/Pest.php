@@ -46,7 +46,31 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * @return array<string, mixed>
+ */
+function pokemonApiPayload(int $id = 1, string $name = 'bulbasaur'): array
 {
-    // ..
+    return [
+        'id' => $id,
+        'name' => $name,
+        'height' => 7,
+        'weight' => 69,
+        'base_experience' => 64,
+        'stats' => [
+            ['base_stat' => 45, 'stat' => ['name' => 'speed']],
+            ['base_stat' => 49, 'stat' => ['name' => 'defense']],
+            ['base_stat' => 65, 'stat' => ['name' => 'special-defense']],
+            ['base_stat' => 45, 'stat' => ['name' => 'hp']],
+            ['base_stat' => 65, 'stat' => ['name' => 'special-attack']],
+            ['base_stat' => 49, 'stat' => ['name' => 'attack']],
+        ],
+    ];
+}
+
+function configurePokeApi(): void
+{
+    config()->set('services.pokeapi.base_url', 'https://pokeapi.test/api/v2');
+    config()->set('services.pokeapi.timeout', 10);
+    config()->set('services.pokeapi.concurrency', 2);
 }
