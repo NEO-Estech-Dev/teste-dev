@@ -1,0 +1,620 @@
+{
+    "info": {
+        "_postman_id": "56274593-d46d-4e92-94bd-44d7a8858ed9",
+        "name": "Pokemon Metrics API",
+        "description": "Collection para avaliar a API de métricas de Pokémon. Antes de executar, suba os containers, rode as migrations, o seed e a ingestão. Execute `Autenticação / Login` primeiro; o token Sanctum retornado será salvo automaticamente na variável `token_pokemon` da collection.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token_pokemon}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "pm.test('A resposta possui um Content-Type JSON', function () {",
+                    "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                    "});"
+                ]
+            }
+        }
+    ],
+    "item": [
+        {
+            "name": "Autenticação",
+            "description": "Fluxo de autenticação com Laravel Sanctum.",
+            "item": [
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login realizado com sucesso', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "const response = pm.response.json();",
+                                    "",
+                                    "pm.test('A resposta contém um token Bearer', function () {",
+                                    "    pm.expect(response.token).to.be.a('string').and.not.empty;",
+                                    "    pm.expect(response.token_type).to.eql('Bearer');",
+                                    "});",
+                                    "",
+                                    "if (response.token) {",
+                                    "    pm.collectionVariables.set('token_pokemon', response.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\",\n    \"device_name\": \"postman\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Autentica o usuário de demonstração e salva o token retornado na variável `token_pokemon` da collection."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Usuário autenticado",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Retorna o usuário autenticado', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(pm.response.json().data.email).to.eql(pm.collectionVariables.get('email'));",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "me"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Métricas",
+            "description": "Exemplos de rankings, filtros, campos e paginação.",
+            "item": [
+                {
+                    "name": "Ranking padrão",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Retorna o ranking padrão', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response.data).to.be.an('array');",
+                                    "    pm.expect(response.meta.metric).to.eql('hp');",
+                                    "    pm.expect(response.meta.order).to.eql('desc');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Maiores HP",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Retorna até dez Pokémon ordenados por HP', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response.data.length).to.be.at.most(10);",
+                                    "    pm.expect(response.meta.metric).to.eql('hp');",
+                                    "    pm.expect(response.meta.limit).to.eql(10);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics?metric=hp&order=desc&fields=id,name,value,types&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "metric",
+                                    "value": "hp"
+                                },
+                                {
+                                    "key": "order",
+                                    "value": "desc"
+                                },
+                                {
+                                    "key": "fields",
+                                    "value": "id,name,value,types"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Menores pesos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics?metric=weight&order=worst&fields=id,name,value,weight&limit=5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "metric",
+                                    "value": "weight"
+                                },
+                                {
+                                    "key": "order",
+                                    "value": "worst"
+                                },
+                                {
+                                    "key": "fields",
+                                    "value": "id,name,value,weight"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Filtrar pelo tipo fire",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics?metric=attack&type=fire&fields=id,name,value,types&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "metric",
+                                    "value": "attack"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "fire"
+                                },
+                                {
+                                    "key": "fields",
+                                    "value": "id,name,value,types"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Somente formas padrão",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Filtro de formas padrão foi aplicado', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(pm.response.json().meta.only_default).to.eql(true);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics?metric=speed&only_default=true&fields=id,name,value&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "metric",
+                                    "value": "speed"
+                                },
+                                {
+                                    "key": "only_default",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "fields",
+                                    "value": "id,name,value"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Total de estatísticas paginado",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Retorna a segunda página', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response.meta.metric).to.eql('stats_total');",
+                                    "    pm.expect(response.meta.page).to.eql(2);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics?metric=stats_total&order=best&fields=id,name,value,stats_total&limit=10&page=2",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "metric",
+                                    "value": "stats_total"
+                                },
+                                {
+                                    "key": "order",
+                                    "value": "best"
+                                },
+                                {
+                                    "key": "fields",
+                                    "value": "id,name,value,stats_total"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "2"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Cenários de erro",
+            "item": [
+                {
+                    "name": "Métricas sem autenticação (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Exige autenticação', function () {",
+                                    "    pm.response.to.have.status(401);",
+                                "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Métrica inválida (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Rejeita uma métrica inválida', function () {",
+                                    "    pm.response.to.have.status(422);",
+                                    "    pm.expect(pm.response.json().errors).to.have.property('metric');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/pokemons/metrics?metric=banana",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "pokemons",
+                                "metrics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "metric",
+                                    "value": "banana"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Encerramento",
+            "description": "Execute por último para revogar o token usado na avaliação.",
+            "item": [
+                {
+                    "name": "Logout",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Token revogado', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(pm.response.json().message).to.eql('Token revoked.');",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.unset('token_pokemon');",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "Revoga o token atual. Execute o login novamente antes de continuar usando endpoints protegidos."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        },
+        {
+            "key": "email",
+            "value": "demo@estech.test",
+            "type": "string"
+        },
+        {
+            "key": "password",
+            "value": "password",
+            "type": "string"
+        },
+        {
+            "key": "token_pokemon",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}
