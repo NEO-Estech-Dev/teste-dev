@@ -1,110 +1,47 @@
 # 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
 
-Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico**, **perfomance**, **escalabilidade** e também sua **velocidade de desenvolvimento**.  
-Leia atentamente as instruções antes de iniciar.
+### Instruções para execução
 
----
+1. Configure as variáveis de ambiente:
 
-## 🎯 Objetivo do Desafio
+   ```bash
+   cp .env.example .env
+   ```
 
-Implementar uma **API REST** utilizando **Laravel (PHP)** e **MySQL**, cujo objetivo é realizar a **ingestão de dados** da API pública de Pokémons e disponibilizar **métricas consultáveis** a partir desses dados.
+2. Suba os containers Docker:
 
-A API pública a ser utilizada é:  
-👉 https://pokeapi.co/
+   ```bash
+   docker compose up -d --build
+   ```
 
----
+3. Instale as dependências e configure a aplicação dentro do container `app`:
 
-## 📋 Requisitos Funcionais
+   ```bash
+   docker compose exec app composer install
+   docker compose exec app php artisan key:generate
+   ```
 
-### 1️⃣ Ingestão de Dados
+4. Execute as migrations e faça a ingestão dos dados:
 
-Sua aplicação deve possuir um **Command do Laravel** responsável por:
+   ```bash
+   docker compose exec app php artisan migrate
+   docker compose exec app php artisan pokemon:ingest --chunk=200
+   ```
 
-- Consumir a API pública do PokeAPI;
-- Persistir os dados relevantes no banco de dados MySQL;
+   Não há seed separado; os dados iniciais são obtidos pelo comando de ingestão.
 
----
+5. Para rodar os testes:
 
-### 2️⃣ Endpoint de Métricas
+   ```bash
+   docker compose exec app php artisan test
+   ```
 
-Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
+6. Para testar o endpoint, utilize os exemplos disponíveis na collection do Postman:
 
-A rota deve permitir, **de forma opcional**, os parâmetros:
+   https://luizflms-team.postman.co/workspace/My-Workspace~1c662700-9c20-4c1a-8fba-5525b035deb8/collection/27404872-d989d723-c2d9-4314-8935-6e22c70f58f9?action=share&creator=27404872
 
-- **Métrica a ser analisada**, por exemplo:
-  - `hp`
+> Observação: caso o banco de dados ainda não esteja pronto quando a migration for executada, aguarde alguns segundos e execute o comando novamente.
 
-- **Campo específico a ser retornado**
-  - Exemplo: retornar apenas o `name` no ranking.
+### Documentação da API
 
-- **Ordenação**
-  - Maiores valores (melhores)
-  - Menores valores (piores)
-
-📌 **Observação:**  
-Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
-Você pode definir outros parâmetros que garantam performance, melhor visibilidade, etc.
-
----
-
-## 🗄️ Banco de Dados
-
-- O banco de dados deve ser modelado e criado **exclusivamente via Migrations do Laravel**;
-- Fique à vontade para definir a melhor modelagem, desde que faça sentido para o domínio do problema.
-
----
-
-## 🧰 Tecnologias Obrigatórias
-
-O projeto **deve** utilizar:
-
-- PHP
-- Framework **Laravel**
-- **MySQL**
-- **Docker** (para construção do ambiente de desenvolvimento)
-
-- Caso sinta necessidade de outras tecnologias complementares, fique a vontade para utilizar.
-
----
-
-## 🚀 Entrega do Desafio
-
-Para entregar o teste, siga rigorosamente os passos abaixo:
-
-1. Faça um **fork** deste repositório  
-   > ⚠️ Apenas clonar o repositório não permitirá o push.
-
-2. Crie uma **branch com seu nome completo**;
-
-3. Atualize o arquivo `teste-pratico.md`, descrevendo claramente:
-   - Como subir o ambiente (Docker);
-   - Comandos necessários (migrations, seeds, ingestão de dados, etc);
-   - Qualquer observação relevante para execução do projeto.
-
-4. Após finalizar, abra um **Pull Request** para o repositório original.
-
----
-
-## ⭐ Bônus (Opcional)
-
-- Implementar autenticação de usuários utilizando **Laravel Sanctum**.
-- Usar Octane / Swoole
-- Criar testes automatizados
-
----
-
-## 🔍 O que será avaliado?
-
-- Configuração e automação do ambiente com Docker;
-- Modelagem e transformação de dados;
-- Organização e legibilidade do código;
-- Clareza no raciocínio lógico;
-- Performance e otimização das consultas;
-- Boas práticas com Laravel e PHP.
-
----
-
-## 🍀 Boa sorte!
-
-Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
-
+A documentação da API está disponível em `localhost:8000/docs/api`.
