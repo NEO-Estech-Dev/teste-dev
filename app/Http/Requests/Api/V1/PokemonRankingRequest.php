@@ -41,10 +41,45 @@ final class PokemonRankingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            /**
+             * Métrica usada para ordenar o ranking.
+             *
+             * @default hp
+             *
+             * @example hp
+             */
             'metric' => ['sometimes', 'string', Rule::in(PokemonMetric::values())],
+            /**
+             * Campo retornado para cada Pokémon.
+             *
+             * @default name
+             *
+             * @example name
+             */
             'field' => ['sometimes', 'string', Rule::in(PokemonField::values())],
+            /**
+             * Direção da ordenação.
+             *
+             * @default desc
+             *
+             * @example desc
+             */
             'order' => ['sometimes', 'string', Rule::in(RankingOrder::values())],
+            /**
+             * Página solicitada.
+             *
+             * @default 1
+             *
+             * @example 1
+             */
             'page' => ['sometimes', 'integer', 'min:1'],
+            /**
+             * Quantidade de itens por página.
+             *
+             * @default 10
+             *
+             * @example 10
+             */
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
         ];
     }

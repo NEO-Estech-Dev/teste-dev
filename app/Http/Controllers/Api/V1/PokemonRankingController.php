@@ -12,6 +12,13 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class PokemonRankingController extends Controller
 {
+    /**
+     * Consultar ranking de Pokémon.
+     *
+     * Retorna dados locais, paginados e ordenados pela métrica solicitada.
+     *
+     * @operationId getPokemonRanking
+     */
     public function __invoke(
         PokemonRankingRequest $request,
         RankPokemonsByMetricQuery $rankPokemonsByMetricQuery,
