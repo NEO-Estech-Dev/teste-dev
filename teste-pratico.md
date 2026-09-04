@@ -1,110 +1,61 @@
-# 🧪 Teste Técnico – Desenvolvedor PHP (Estech)
+## Considerações
+- Se estiver sem tempo, recomendo seguir pelo [README.md](README.md) e utilizar a collection do Postman para testar, mas também tem comandos cURL no arquivo.
 
-Neste teste avaliaremos seu **conhecimento técnico**, **organização de código**, **raciocínio lógico**, **perfomance**, **escalabilidade** e também sua **velocidade de desenvolvimento**.  
-Leia atentamente as instruções antes de iniciar.
+- Entendo que este projeto não precise de muitas camadas ou uma arquitetura muito elaborada, mas para demonstração de conhecimento, achei melhor implementar uma arquitetura "intermediária".
 
----
+- Como não estava definido no projeto e não utilizamos uma plataforma monitorada, fiz uso de IAs para acelerar o desenvolvimento, pois sabemos que é o dia a dia das empresas hoje em dia. Além disso, acredito que o foco do teste é verificar se o candidato é capaz de resolver o problema utilizando as ferramentas, conhecimento e criatividade.
 
-## 🎯 Objetivo do Desafio
+- Se necessário, fico à disposição para uma conversa para confirmarmos a experiência com o ecossistema PHP/Laravel e bancos relacionais 🙏
 
-Implementar uma **API REST** utilizando **Laravel (PHP)** e **MySQL**, cujo objetivo é realizar a **ingestão de dados** da API pública de Pokémons e disponibilizar **métricas consultáveis** a partir desses dados.
+## Solução entregue
 
-A API pública a ser utilizada é:  
-👉 https://pokeapi.co/
+> **Sobre este arquivo:** arquivo geral sobre a solução implementada.
 
----
+> **Outros documentos:** [README.md](README.md) é o roteiro prático para testes; [ARQUITETURA-E-DECISOES.md](ARQUITETURA-E-DECISOES.md) detalha a arquitetura e decisões técnicas.
 
-## 📋 Requisitos Funcionais
+> Os exemplos de requisição estão também em uma **collection para Postman**: [pokemon-metrics.postman_collection.json](pokemon-metrics.postman_collection.json).
 
-### 1️⃣ Ingestão de Dados
 
-Sua aplicação deve possuir um **Command do Laravel** responsável por:
+A solução usa Laravel 13, PHP 8.3+, MySQL 8 e Docker. Os três bônus foram implementados: autenticação com Sanctum, Octane/Swoole e testes automatizados.
 
-- Consumir a API pública do PokeAPI;
-- Persistir os dados relevantes no banco de dados MySQL;
+### Execução
 
----
+```sh
+cp .env.example .env
+docker compose up -d --build
+docker compose exec app php artisan db:seed
+docker compose exec app php artisan pokemon:ingest
+```
 
-### 2️⃣ Endpoint de Métricas
+As migrations são executadas automaticamente na inicialização. Para uma ingestão rápida, use `--limit=200`. O command aceita ainda `--offset`, `--chunk`, `--concurrency` e `--fresh`.
 
-Criar uma **rota HTTP** que permita consultar métricas dos Pokémons armazenados.
+O usuário de demonstração é `demo@estech.test`, com senha `password`. O passo a passo de autenticação, métricas e Postman está no [README.md](README.md).
 
-A rota deve permitir, **de forma opcional**, os parâmetros:
+### Endpoint
 
-- **Métrica a ser analisada**, por exemplo:
-  - `hp`
+```http
+GET /api/v1/pokemons/metrics
+```
 
-- **Campo específico a ser retornado**
-  - Exemplo: retornar apenas o `name` no ranking.
+Todos os parâmetros são opcionais. Os principais são `metric`, `fields` e `order`; também estão disponíveis `limit`, `page`, `type` e `only_default`.
 
-- **Ordenação**
-  - Maiores valores (melhores)
-  - Menores valores (piores)
+A rota exige token Sanctum por padrão. Para uma inspeção local sem autenticação, defina `METRICS_REQUIRE_AUTH=false` e reinicie a aplicação.
 
-📌 **Observação:**  
-Todos os parâmetros devem ser **opcionais** e possuir valores padrão coerentes.
-Você pode definir outros parâmetros que garantam performance, melhor visibilidade, etc.
+### Testes e qualidade
 
----
+```sh
+make test
+make test-mysql
+docker compose exec app php vendor/bin/pint --test
+```
 
-## 🗄️ Banco de Dados
+A suíte contém 25 testes relevantes, com 107 asserções, cobrindo autenticação, validação, rankings, cache, filtros, paginação, seleção de campos, ingestão, atualização, idempotência e falhas parciais da PokeAPI.
 
-- O banco de dados deve ser modelado e criado **exclusivamente via Migrations do Laravel**;
-- Fique à vontade para definir a melhor modelagem, desde que faça sentido para o domínio do problema.
+### Observações
 
----
-
-## 🧰 Tecnologias Obrigatórias
-
-O projeto **deve** utilizar:
-
-- PHP
-- Framework **Laravel**
-- **MySQL**
-- **Docker** (para construção do ambiente de desenvolvimento)
-
-- Caso sinta necessidade de outras tecnologias complementares, fique a vontade para utilizar.
-
----
-
-## 🚀 Entrega do Desafio
-
-Para entregar o teste, siga rigorosamente os passos abaixo:
-
-1. Faça um **fork** deste repositório  
-   > ⚠️ Apenas clonar o repositório não permitirá o push.
-
-2. Crie uma **branch com seu nome completo**;
-
-3. Atualize o arquivo `teste-pratico.md`, descrevendo claramente:
-   - Como subir o ambiente (Docker);
-   - Comandos necessários (migrations, seeds, ingestão de dados, etc);
-   - Qualquer observação relevante para execução do projeto.
-
-4. Após finalizar, abra um **Pull Request** para o repositório original.
-
----
-
-## ⭐ Bônus (Opcional)
-
-- Implementar autenticação de usuários utilizando **Laravel Sanctum**.
-- Usar Octane / Swoole
-- Criar testes automatizados
-
----
-
-## 🔍 O que será avaliado?
-
-- Configuração e automação do ambiente com Docker;
-- Modelagem e transformação de dados;
-- Organização e legibilidade do código;
-- Clareza no raciocínio lógico;
-- Performance e otimização das consultas;
-- Boas práticas com Laravel e PHP.
-
----
-
-## 🍀 Boa sorte!
-
-Seja claro, simples e consistente. Preferimos soluções bem pensadas a soluções excessivamente complexas.
-
+- A ingestão usa `Http::pool()`, escrita em lotes e transações.
+- `upsert` e chaves naturais permitem reexecutar o command sem duplicação.
+- Rankings usam whitelists e índices; nenhum nome de coluna vem diretamente do request.
+- Rankings são armazenados no Redis por 300 segundos com `Cache::remember()` e tags nativas.
+- A ingestão invalida a tag `pokemon_metrics`, disponibilizando os dados atualizados imediatamente.
+- Toda a modelagem do domínio é criada exclusivamente por migrations.
